@@ -1,9 +1,11 @@
 """GreenLoop FastAPI application entrypoint."""
 
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastapi import FastAPI, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from backend.app.api.v1.router import api_v1_router
@@ -24,9 +26,12 @@ logger = get_logger("greenloop.app")
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context for startup and shutdown events."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} ({settings.APP_ENV} mode)...")
-    # Initialize base database tables if not present (foundational metadata)
+    # Ensure upload directory exists
+    upload_path = os.path.abspath(settings.UPLOAD_DIR)
+    os.makedirs(upload_path, exist_ok=True)
+    # Initialize base database tables if not present
     Base.metadata.create_all(bind=engine)
-    logger.info("Database foundation initialized successfully.")
+    logger.info("Database foundation and tables initialized successfully.")
     yield
     logger.info(f"Shutting down {settings.APP_NAME}...")
 
@@ -36,7 +41,7 @@ def create_application() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        description="Socially useful waste-management and recycling platform API foundation.",
+        description="Socially useful waste-management and recycling platform API.",
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -55,6 +60,11 @@ def create_application() -> FastAPI:
 
     # Exception Handling
     register_exception_handlers(app)
+
+    # Mount static files directory for uploads
+    upload_path = os.path.abspath(settings.UPLOAD_DIR)
+    os.makedirs(upload_path, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=upload_path), name="uploads")
 
     # Root health endpoint (for load balancers and container monitors)
     @app.get(

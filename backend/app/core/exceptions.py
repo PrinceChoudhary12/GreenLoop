@@ -3,8 +3,9 @@
 Ensures user-friendly JSON responses without exposing internal stack traces.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -55,6 +56,22 @@ class ResourceNotFoundException(AppException):
         )
 
 
+def _sanitize_validation_errors(raw_errors: List[Any]) -> List[Dict[str, Any]]:
+    """Convert raw pydantic error dicts to clean, serializable structures."""
+    sanitized = []
+    for err in raw_errors:
+        if isinstance(err, dict):
+            clean_err = {
+                "field": ".".join(str(loc) for loc in err.get("loc", []) if loc != "body"),
+                "message": err.get("msg", "Invalid value"),
+                "type": err.get("type", "validation_error"),
+            }
+            sanitized.append(clean_err)
+        else:
+            sanitized.append({"message": str(err)})
+    return sanitized
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register custom exception handlers with FastAPI application."""
 
@@ -67,7 +84,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "error": {
                     "code": exc.error_code,
                     "message": exc.message,
-                    "details": exc.details,
+                    "details": jsonable_encoder(exc.details),
                 }
             },
         )
@@ -88,14 +105,15 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-        logger.warning(f"Validation error on {request.url.path}: {exc.errors()}")
+        sanitized_errors = _sanitize_validation_errors(exc.errors())
+        logger.warning(f"Validation error on {request.url.path}: {sanitized_errors}")
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
                 "error": {
                     "code": "VALIDATION_ERROR",
                     "message": "Invalid request payload or parameters",
-                    "details": {"errors": exc.errors()},
+                    "details": {"errors": sanitized_errors},
                 }
             },
         )

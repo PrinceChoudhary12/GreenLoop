@@ -26,6 +26,21 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./greenloop.db"
 
+    # Authentication & Security
+    SECRET_KEY: str = "greenloop-dev-secret-key-change-in-production-min-32-chars-long"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+
+    # File Uploads
+    UPLOAD_DIR: str = "uploads"
+    MAX_IMAGE_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+    ALLOWED_IMAGE_TYPES: List[str] = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/jpg",
+    ]
+
     # CORS origins
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

@@ -1,5 +1,13 @@
-"""Services module."""
+"""Services package."""
 
+from backend.app.services.auth_service import AuthService
 from backend.app.services.health import HealthService
+from backend.app.services.report_service import ReportService
+from backend.app.services.storage_service import StorageService
 
-__all__ = ["HealthService"]
+__all__ = [
+    "HealthService",
+    "AuthService",
+    "ReportService",
+    "StorageService",
+]
