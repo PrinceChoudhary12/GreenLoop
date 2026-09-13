@@ -28,6 +28,7 @@ class WasteReportResponse(BaseModel):
 
     id: int
     user_id: int
+    collector_id: Optional[int] = None
     category: WasteCategory
     description: str
     location: str
@@ -50,6 +51,13 @@ class WasteReportSummary(BaseModel):
     image_path: Optional[str] = None
     status: ReportStatus
     priority: ReportPriority
+    collector_id: Optional[int] = None
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CollectorReportStatusUpdate(BaseModel):
+    """Payload for collector updating the status of a claimed waste report."""
+
+    status: ReportStatus = Field(..., description="Target status: ACCEPTED, RESOLVED, or REJECTED")

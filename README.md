@@ -21,8 +21,8 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 
 ## 3. Current Version & Development Status
 
-- **Current Version**: `v1.0.0`
-- **Current Milestone**: `Milestone 01 — Master Architecture & Project Foundation`
+- **Current Version**: `v0.5.0`
+- **Current Milestone**: `Milestone 05 — End-to-End Pickup Workflow & Real-Time Logistics Coordination`
 - **Status**: **Completed & Verified**
 
 ### Feature Status Matrix
@@ -36,11 +36,18 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 | **System & Database Health Check Endpoints** | **Implemented** | Milestone 01 |
 | **React + TypeScript + Vite UI Design Foundation** | **Implemented** | Milestone 01 |
 | **Automated Backend (pytest) & Frontend (Vitest) Test Suites** | **Implemented** | Milestone 01 |
-| User Registration, Authentication & RBAC | *Planned* | Milestone 02 |
-| Waste Reporting & Geo-tagging | *Planned* | Milestone 03 |
-| Collector Assignment & Route Scheduling | *Planned* | Milestone 04 |
-| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 05 |
-| Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 06 |
+| **Citizen Registration, Authentication (JWT), & Role Management** | **Implemented** | Milestone 02 |
+| **Citizen Waste Reporting, Photo Upload & Report Details** | **Implemented** | Milestone 02 |
+| **Collector Registration, Workspace & Available Queue** | **Implemented** | Milestone 03 |
+| **Task Claiming & Lifecycle Status Transitions (Accepted/Resolved)** | **Implemented** | Milestone 03 |
+| **Admin Dashboard, Platform Metrics & Analytics** | **Implemented** | Milestone 04 |
+| **User Directory Moderation & Status Activation Toggle** | **Implemented** | Milestone 04 |
+| **Manual Collector Assignment & Admin Status Override** | **Implemented** | Milestone 04 |
+| **Scheduled Waste Pickup Requests & Duplicate Concurrency Guard** | **Implemented** | Milestone 05 |
+| **Multi-Role Pickup Logistics Lifecycle (Schedule → Assign → Accept → In Progress → Complete)** | **Implemented** | Milestone 05 |
+| **Role-Enforced Cancellation Rules & Atomic Waste Report Resolution** | **Implemented** | Milestone 05 |
+| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 06 |
+| Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 07 |
 
 ---
 
@@ -174,6 +181,12 @@ python run.py
 - **Swagger Documentation**: `http://127.0.0.1:8000/docs`
 - **ReDoc Documentation**: `http://127.0.0.1:8000/redoc`
 - **Root Health Check**: `http://127.0.0.1:8000/health`
+
+##### Bootstrapping an Administrator (CLI)
+Since admin registration is strictly restricted from public registration endpoints, create initial admin credentials via the secure CLI seed utility:
+```bash
+python scripts/create_admin.py --email admin@greenloop.org --full-name "Admin User" --password "SecureAdminPassword123!"
+```
 
 #### 2. Frontend Setup
 

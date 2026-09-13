@@ -22,7 +22,13 @@ export const Login: React.FC = () => {
     try {
       const { access_token, user } = await authService.login(email.trim(), password);
       login(access_token, user);
-      navigate('/dashboard', { replace: true });
+      if (user.role === 'ADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'COLLECTOR') {
+        navigate('/collector', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {

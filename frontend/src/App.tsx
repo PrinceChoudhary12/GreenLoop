@@ -7,8 +7,12 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Dashboard } from './pages/citizen/Dashboard';
 import { Reports } from './pages/citizen/Reports';
+import { Pickups } from './pages/citizen/Pickups';
 import { ReportWaste } from './pages/citizen/ReportWaste';
 import { ReportDetail } from './pages/citizen/ReportDetail';
+import { CollectorDashboard } from './pages/collector/CollectorDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { fetchHealth } from './services/api';
 import type { HealthResponse, HealthStatus } from './types/health';
 
@@ -77,7 +81,7 @@ export const App: React.FC = () => {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <Dashboard />
             </Layout>
@@ -87,7 +91,7 @@ export const App: React.FC = () => {
       <Route
         path="/reports"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <Reports />
             </Layout>
@@ -97,7 +101,7 @@ export const App: React.FC = () => {
       <Route
         path="/reports/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <ReportDetail />
             </Layout>
@@ -105,11 +109,51 @@ export const App: React.FC = () => {
         }
       />
       <Route
+        path="/pickups"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
+            <Layout>
+              <Pickups />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/report-waste"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <ReportWaste />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collector"
+        element={
+          <ProtectedRoute allowedRoles={['COLLECTOR']}>
+            <Layout>
+              <CollectorDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Layout>
+              <AdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout>
+              <NotificationsPage />
             </Layout>
           </ProtectedRoute>
         }

@@ -25,6 +25,16 @@ class AuthService:
     @staticmethod
     def register_citizen(db: Session, data: UserRegister) -> Tuple[User, str]:
         """Register a new citizen account and issue a JWT access token."""
+        return AuthService._register_user(db=db, data=data, role=UserRole.CITIZEN)
+
+    @staticmethod
+    def register_collector(db: Session, data: UserRegister) -> Tuple[User, str]:
+        """Register a new collector account and issue a JWT access token."""
+        return AuthService._register_user(db=db, data=data, role=UserRole.COLLECTOR)
+
+    @staticmethod
+    def _register_user(db: Session, data: UserRegister, role: UserRole) -> Tuple[User, str]:
+        """Create a role-scoped account while preserving shared credential rules."""
         user_repo = UserRepository(db)
 
         # Check if email is already taken
@@ -40,16 +50,16 @@ class AuthService:
         # Hash password securely with bcrypt
         password_hash = get_password_hash(data.password)
 
-        # Create new citizen user
+        # Create new role-scoped user
         new_user = User(
             name=data.name,
             email=data.email,
             password_hash=password_hash,
-            role=UserRole.CITIZEN,
+            role=role,
             is_active=True,
         )
         user = user_repo.create(new_user)
-        logger.info(f"Citizen registered successfully: User ID {user.id} ({user.email})")
+        logger.info(f"{role.value.title()} registered successfully: User ID {user.id} ({user.email})")
 
         # Generate JWT access token
         token = create_access_token(subject=user.id, role=user.role.value)

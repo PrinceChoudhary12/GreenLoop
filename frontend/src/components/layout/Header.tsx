@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Leaf, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { StatusBadge } from '../common/StatusBadge';
+import { NotificationBell } from '../notifications/NotificationBell';
 import type { HealthStatus } from '../../types/health';
 import './Header.css';
 
@@ -52,17 +53,40 @@ export const Header: React.FC<HeaderProps> = ({ systemStatus }) => {
 
           {isAuthenticated ? (
             <>
-              <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
-                Dashboard
-              </NavLink>
-              <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
-                My Reports
-              </NavLink>
-              <NavLink to="/report-waste" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
-                Report Waste
-              </NavLink>
+              {user?.role === 'ADMIN' ? (
+                <NavLink to="/admin" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                  Admin Portal
+                </NavLink>
+              ) : user?.role === 'COLLECTOR' ? (
+                <NavLink to="/collector" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                  Collector Workspace
+                </NavLink>
+              ) : (
+                <>
+                  <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    My Reports
+                  </NavLink>
+                  <NavLink to="/pickups" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    My Pickups
+                  </NavLink>
+                  <NavLink to="/report-waste" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    Report Waste
+                  </NavLink>
+                </>
+              )}
               <div className="user-profile-menu">
-                <span className="user-greeting">Hi, {user?.name?.split(' ')[0]}</span>
+                <NotificationBell />
+                <span className="user-greeting">
+                  Hi, {user?.name?.split(' ')[0]}
+                  {user?.role && (
+                    <span className={`role-badge role-badge-${user.role.toLowerCase()}`} style={{ marginLeft: '6px' }}>
+                      {user.role}
+                    </span>
+                  )}
+                </span>
                 <button className="btn btn-ghost btn-sm logout-btn" onClick={handleLogout} aria-label="Log out">
                   <LogOut size={14} aria-hidden="true" />
                   Logout

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin, Tag, Flag } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Tag, Flag, Truck } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
+import { RequestPickupModal } from './RequestPickupModal';
 import type { WasteReport } from '../../types/report';
+import type { Pickup } from '../../types/pickup';
 import './ReportDetail.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -28,6 +30,8 @@ export const ReportDetail: React.FC = () => {
   const [report, setReport] = useState<WasteReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [pickupSuccessMsg, setPickupSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -66,6 +70,13 @@ export const ReportDetail: React.FC = () => {
     };
   }, [token, id]);
 
+  const handlePickupSuccess = (pickup: Pickup) => {
+    setShowPickupModal(false);
+    setPickupSuccessMsg(`Pickup request #${pickup.id} has been submitted! You can track it in My Pickups.`);
+  };
+
+  const isEligibleForPickup = report && ['SUBMITTED', 'UNDER_REVIEW', 'ACCEPTED'].includes(report.status);
+
   if (loading) {
     return (
       <div className="loading-state" aria-live="polite">
@@ -97,10 +108,30 @@ export const ReportDetail: React.FC = () => {
         </div>
       </div>
 
+      {pickupSuccessMsg && (
+        <div className="pickup-success-banner" role="status">
+          <Truck size={18} />
+          <span>{pickupSuccessMsg}</span>
+          <Link to="/pickups" className="banner-link">View Pickups →</Link>
+        </div>
+      )}
+
       <div className="detail-card">
         <div className="detail-title-row">
-          <h1 className="detail-title">{CATEGORY_LABELS[report.category]}</h1>
-          <span className="detail-id">Report #{report.id}</span>
+          <div>
+            <h1 className="detail-title">{CATEGORY_LABELS[report.category]}</h1>
+            <span className="detail-id">Report #{report.id}</span>
+          </div>
+
+          {isEligibleForPickup && (
+            <button
+              className="btn btn-primary btn-request-pickup"
+              onClick={() => setShowPickupModal(true)}
+            >
+              <Truck size={16} />
+              Request Pickup
+            </button>
+          )}
         </div>
 
         <div className="detail-meta-grid">
@@ -144,6 +175,15 @@ export const ReportDetail: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showPickupModal && (
+        <RequestPickupModal
+          reportId={report.id}
+          reportLocation={report.location}
+          onSuccess={handlePickupSuccess}
+          onClose={() => setShowPickupModal(false)}
+        />
+      )}
     </div>
   );
 };

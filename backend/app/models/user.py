@@ -34,6 +34,7 @@ class User(BaseEntity):
     # Relationships
     reports: Mapped[List["WasteReport"]] = relationship(
         "WasteReport",
+        foreign_keys="[WasteReport.user_id]",
         back_populates="user",
         cascade="all, delete-orphan",
         order_by="desc(WasteReport.created_at)",
