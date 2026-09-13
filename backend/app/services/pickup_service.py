@@ -8,13 +8,15 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import AppException
 from backend.app.core.logging import get_logger
-from backend.app.models.enums import PickupStatus, ReportStatus, UserRole
+from backend.app.models.enums import ActivityAction, NotificationType, PickupStatus, ReportStatus, UserRole
 from backend.app.models.pickup import Pickup
 from backend.app.models.user import User
 from backend.app.repositories.pickup_repository import PickupRepository
 from backend.app.repositories.report_repository import ReportRepository
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.pickup import PickupCreatePayload, PickupSchedulePayload
+from backend.app.services.activity_service import ActivityService
+from backend.app.services.notification_service import NotificationService
 
 logger = get_logger(__name__)
 
@@ -94,6 +96,28 @@ class PickupService:
             )
 
         logger.info(f"Citizen #{citizen.id} requested pickup #{pickup.id} for report #{report.id}.")
+
+        # Emit activity and notification
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_REQUESTED,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=citizen.id,
+            target_user_id=citizen.id,
+            details=f"Pickup requested for Report #{report.id}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=citizen.id,
+            notification_type=NotificationType.PICKUP_REQUESTED,
+            title="Pickup Request Submitted",
+            message=f"Your pickup request #{pickup.id} for report #{report.id} has been received.",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=citizen.id,
+        )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -191,6 +215,7 @@ class PickupService:
                     error_code="CITIZEN_CANNOT_CANCEL_ACCEPTED_PICKUP",
                 )
 
+        assigned_collector_id = pickup.collector_id
         pickup.status = PickupStatus.CANCELLED
         pickup.cancellation_reason = cancellation_reason.strip()
         pickup.cancelled_by_id = current_user.id
@@ -199,6 +224,44 @@ class PickupService:
         db.commit()
         db.refresh(pickup)
         logger.info(f"Pickup #{pickup.id} cancelled by User #{current_user.id}. Reason: {cancellation_reason}")
+
+        # Emit activity
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_CANCELLED,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=current_user.id,
+            target_user_id=pickup.user_id,
+            details=f"Cancelled by {current_user.name} ({current_user.role.value}): {cancellation_reason.strip()}",
+        )
+
+        # Notify citizen if cancelled by admin
+        if current_user.role == UserRole.ADMIN:
+            NotificationService.create_notification(
+                db=db,
+                user_id=pickup.user_id,
+                notification_type=NotificationType.PICKUP_CANCELLED,
+                title="Pickup Cancelled",
+                message=f"Your pickup #{pickup.id} was cancelled by an administrator. Reason: {cancellation_reason.strip()}",
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=current_user.id,
+            )
+
+        # Notify assigned collector if any
+        if assigned_collector_id and assigned_collector_id != current_user.id:
+            NotificationService.create_notification(
+                db=db,
+                user_id=assigned_collector_id,
+                notification_type=NotificationType.PICKUP_CANCELLED,
+                title="Assigned Pickup Cancelled",
+                message=f"Pickup #{pickup.id} has been cancelled. Reason: {cancellation_reason.strip()}",
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=current_user.id,
+            )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -252,6 +315,28 @@ class PickupService:
         db.commit()
         db.refresh(pickup)
         logger.info(f"Collector #{collector.id} accepted pickup #{pickup.id}.")
+
+        # Emit activity and notification
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_ACCEPTED,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+            target_user_id=pickup.user_id,
+            details=f"Pickup accepted by Collector {collector.name}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=pickup.user_id,
+            notification_type=NotificationType.PICKUP_ACCEPTED,
+            title="Pickup Accepted",
+            message=f"Collector {collector.name} has accepted your scheduled pickup #{pickup.id}.",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+        )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -288,6 +373,28 @@ class PickupService:
         db.commit()
         db.refresh(pickup)
         logger.info(f"Collector #{collector.id} started pickup #{pickup.id}.")
+
+        # Emit activity and notification
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_IN_PROGRESS,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+            target_user_id=pickup.user_id,
+            details=f"Collector {collector.name} is on the way for pickup collection",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=pickup.user_id,
+            notification_type=NotificationType.PICKUP_IN_PROGRESS,
+            title="Pickup In Progress",
+            message=f"Collector {collector.name} is on the way to collect your waste pickup #{pickup.id}.",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+        )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -355,6 +462,28 @@ class PickupService:
             )
 
         logger.info(f"Collector #{collector.id} completed pickup #{pickup.id}; Report #{report.id} resolved.")
+
+        # Emit activity and notification
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_COMPLETED,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+            target_user_id=pickup.user_id,
+            details=f"Pickup completed; Report #{report.id} resolved by Collector {collector.name}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=pickup.user_id,
+            notification_type=NotificationType.PICKUP_COMPLETED,
+            title="Pickup Completed",
+            message=f"Your waste pickup #{pickup.id} has been completed and the waste collected!",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=collector.id,
+        )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -393,6 +522,7 @@ class PickupService:
         if payload.notes:
             pickup.notes = payload.notes
 
+        collector = None
         if payload.collector_id is not None:
             collector = user_repo.get_by_id(payload.collector_id)
             if not collector or collector.role != UserRole.COLLECTOR or not collector.is_active:
@@ -409,6 +539,60 @@ class PickupService:
         db.commit()
         db.refresh(pickup)
         logger.info(f"Admin #{admin_user.id} scheduled pickup #{pickup.id} (Status: {pickup.status.value}).")
+
+        # Emit activity and notification
+        date_str = payload.scheduled_date.strftime('%Y-%m-%d')
+        if collector:
+            ActivityService.log_activity(
+                db=db,
+                action=ActivityAction.PICKUP_SCHEDULED,
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=admin_user.id,
+                target_user_id=pickup.user_id,
+                details=f"Scheduled for {date_str} ({payload.time_slot}) and assigned to Collector {collector.name}",
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=pickup.user_id,
+                notification_type=NotificationType.PICKUP_SCHEDULED,
+                title="Pickup Scheduled",
+                message=f"Your pickup #{pickup.id} has been scheduled for {date_str} ({payload.time_slot}) and assigned to {collector.name}.",
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=admin_user.id,
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=collector.id,
+                notification_type=NotificationType.PICKUP_ASSIGNED,
+                title="New Pickup Assigned",
+                message=f"You have been assigned to pickup #{pickup.id} scheduled for {date_str} ({payload.time_slot}).",
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=admin_user.id,
+            )
+        else:
+            ActivityService.log_activity(
+                db=db,
+                action=ActivityAction.PICKUP_SCHEDULED,
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=admin_user.id,
+                target_user_id=pickup.user_id,
+                details=f"Scheduled for {date_str} ({payload.time_slot})",
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=pickup.user_id,
+                notification_type=NotificationType.PICKUP_SCHEDULED,
+                title="Pickup Scheduled",
+                message=f"Your pickup #{pickup.id} has been scheduled for {date_str} ({payload.time_slot}).",
+                entity_type="pickup",
+                entity_id=pickup.id,
+                actor_id=admin_user.id,
+            )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod
@@ -451,6 +635,38 @@ class PickupService:
         db.commit()
         db.refresh(pickup)
         logger.info(f"Admin #{admin_user.id} assigned collector #{collector.id} to pickup #{pickup.id}.")
+
+        # Emit activity and notifications
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.PICKUP_ASSIGNED,
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=admin_user.id,
+            target_user_id=pickup.user_id,
+            details=f"Assigned to Collector {collector.name}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=pickup.user_id,
+            notification_type=NotificationType.PICKUP_ASSIGNED,
+            title="Collector Assigned",
+            message=f"Collector {collector.name} has been assigned to your pickup #{pickup.id}.",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=admin_user.id,
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=collector.id,
+            notification_type=NotificationType.PICKUP_ASSIGNED,
+            title="New Pickup Assigned",
+            message=f"You have been assigned to pickup #{pickup.id}.",
+            entity_type="pickup",
+            entity_id=pickup.id,
+            actor_id=admin_user.id,
+        )
+
         return pickup_repo.get_by_id_with_relations(pickup.id) or pickup
 
     @staticmethod

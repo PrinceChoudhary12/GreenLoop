@@ -6,11 +6,13 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import AppException
 from backend.app.core.logging import get_logger
-from backend.app.models.enums import ReportPriority, ReportStatus, WasteCategory
+from backend.app.models.enums import ActivityAction, NotificationType, ReportPriority, ReportStatus, WasteCategory
 from backend.app.models.report import WasteReport
 from backend.app.models.user import User
 from backend.app.repositories.report_repository import ReportRepository
 from backend.app.schemas.report import WasteReportCreate
+from backend.app.services.activity_service import ActivityService
+from backend.app.services.notification_service import NotificationService
 from backend.app.services.storage_service import StorageService
 
 logger = get_logger(__name__)
@@ -47,6 +49,28 @@ class ReportService:
 
         created_report = report_repo.create(new_report)
         logger.info(f"Report #{created_report.id} created by citizen User ID {user.id} ({data.category})")
+
+        # Emit activity and notification
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.REPORT_CREATED,
+            entity_type="report",
+            entity_id=created_report.id,
+            actor_id=user.id,
+            target_user_id=user.id,
+            details=f"Report created in category {created_report.category.value} at {created_report.location}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=user.id,
+            notification_type=NotificationType.REPORT_CREATED,
+            title="Waste Report Submitted",
+            message=f"Your waste report #{created_report.id} ({created_report.category.value}) has been submitted successfully.",
+            entity_type="report",
+            entity_id=created_report.id,
+            actor_id=user.id,
+        )
+
         return created_report
 
     @staticmethod
@@ -148,6 +172,28 @@ class ReportService:
 
         updated = report_repo.update(report)
         logger.info(f"Report #{report.id} claimed by collector {collector.id} ({collector.email})")
+
+        # Emit activity and notification to citizen report owner
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.REPORT_CLAIMED,
+            entity_type="report",
+            entity_id=report.id,
+            actor_id=collector.id,
+            target_user_id=report.user_id,
+            details=f"Report claimed by Collector {collector.name}",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=report.user_id,
+            notification_type=NotificationType.REPORT_CLAIMED,
+            title="Report Claimed",
+            message=f"Collector {collector.name} has claimed your waste report #{report.id}.",
+            entity_type="report",
+            entity_id=report.id,
+            actor_id=collector.id,
+        )
+
         return updated
 
     @staticmethod
@@ -183,10 +229,35 @@ class ReportService:
                 error_code="INVALID_STATUS_TRANSITION",
             )
 
+        old_status = report.status
         report.status = new_status
         updated = report_repo.update(report)
         logger.info(f"Report #{report.id} status updated to {new_status.value} by collector {collector_id}")
+
+        # Emit activity and notification only if status changed
+        if old_status != new_status:
+            ActivityService.log_activity(
+                db=db,
+                action=ActivityAction.REPORT_STATUS_UPDATED,
+                entity_type="report",
+                entity_id=report.id,
+                actor_id=collector_id,
+                target_user_id=report.user_id,
+                details=f"Status changed from {old_status.value} to {new_status.value}",
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=report.user_id,
+                notification_type=NotificationType.REPORT_STATUS_UPDATED,
+                title=f"Report Status: {new_status.value.replace('_', ' ').title()}",
+                message=f"Your waste report #{report.id} status was updated to {new_status.value.replace('_', ' ').title()}.",
+                entity_type="report",
+                entity_id=report.id,
+                actor_id=collector_id,
+            )
+
         return updated
+
 
     @staticmethod
     def get_collector_metrics(db: Session, collector_id: int) -> dict:

@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
+  Calendar,
   CheckCircle2,
   ExternalLink,
+  History,
   Inbox,
   Lock,
   PackageCheck,
@@ -14,16 +16,18 @@ import {
   UserPlus,
   Users,
   UserX,
-  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { adminService } from '../../services/adminService';
 import { pickupService } from '../../services/pickupService';
+import { activityService } from '../../services/activityService';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { ActivityTimeline } from '../../components/activity/ActivityTimeline';
 import type { AdminMetrics, AdminReport, AdminUser, CollectorLookupItem } from '../../types/admin';
 import type { ReportStatus } from '../../types/report';
 import type { Pickup, PickupStatus } from '../../types/pickup';
+import type { ActivityLogItem } from '../../types/activity';
 import './AdminDashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -51,8 +55,9 @@ export const AdminDashboard: React.FC = () => {
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [collectors, setCollectors] = useState<CollectorLookupItem[]>([]);
   const [pickups, setPickups] = useState<Pickup[]>([]);
+  const [activities, setActivities] = useState<ActivityLogItem[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'users' | 'reports' | 'pickups'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'reports' | 'pickups' | 'audit'>('users');
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,6 +77,10 @@ export const AdminDashboard: React.FC = () => {
   // Pickup filters
   const [pickupStatusFilter, setPickupStatusFilter] = useState<string>('');
   const [pickupSearchQuery, setPickupSearchQuery] = useState<string>('');
+
+  // Audit Log filters
+  const [auditActionFilter, setAuditActionFilter] = useState<string>('');
+  const [auditEntityTypeFilter, setAuditEntityTypeFilter] = useState<string>('');
 
   // Assignment state modal / selection
   const [selectedReportForAssign, setSelectedReportForAssign] = useState<AdminReport | null>(null);
@@ -96,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
           ? false
           : undefined;
 
-      const [m, u, r, c, p] = await Promise.all([
+      const [m, u, r, c, p, a] = await Promise.all([
         adminService.getMetrics(token),
         adminService.getUsers(token, {
           role: userRoleFilter || undefined,
@@ -114,12 +123,18 @@ export const AdminDashboard: React.FC = () => {
           status: (pickupStatusFilter as PickupStatus) || undefined,
           search: pickupSearchQuery.trim() || undefined,
         }),
+        activityService.fetchAdminActivity(token, {
+          action: auditActionFilter || undefined,
+          entity_type: auditEntityTypeFilter || undefined,
+          limit: 50,
+        }),
       ]);
       setMetrics(m);
       setUsers(u);
       setReports(r);
       setCollectors(c);
       setPickups(p);
+      setActivities(a.items);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to load administrator data.');
     } finally {
@@ -136,6 +151,8 @@ export const AdminDashboard: React.FC = () => {
     reportSearchQuery,
     pickupStatusFilter,
     pickupSearchQuery,
+    auditActionFilter,
+    auditEntityTypeFilter,
   ]);
 
   useEffect(() => {
@@ -410,6 +427,16 @@ export const AdminDashboard: React.FC = () => {
             <Truck size={16} />
             Pickup Logistics
             <span className="tab-counter">{pickups.length}</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'audit'}
+            className={`admin-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
+            onClick={() => setActiveTab('audit')}
+          >
+            <History size={16} />
+            System Audit Logs
+            <span className="tab-counter">{activities.length}</span>
           </button>
         </div>
 
@@ -838,6 +865,65 @@ export const AdminDashboard: React.FC = () => {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab 4: System Audit Logs */}
+        {activeTab === 'audit' && (
+          <div className="tab-pane" role="tabpanel">
+            <div className="filter-toolbar">
+              <select
+                value={auditActionFilter}
+                onChange={e => setAuditActionFilter(e.target.value)}
+                className="filter-select"
+                aria-label="Filter by action type"
+              >
+                <option value="">All Actions</option>
+                <option value="REPORT_CREATED">Report Created</option>
+                <option value="REPORT_CLAIMED">Report Claimed</option>
+                <option value="REPORT_STATUS_UPDATED">Report Status Updated</option>
+                <option value="PICKUP_REQUESTED">Pickup Requested</option>
+                <option value="PICKUP_SCHEDULED">Pickup Scheduled</option>
+                <option value="PICKUP_ASSIGNED">Pickup Assigned</option>
+                <option value="PICKUP_ACCEPTED">Pickup Accepted</option>
+                <option value="PICKUP_IN_PROGRESS">Pickup In Progress</option>
+                <option value="PICKUP_COMPLETED">Pickup Completed</option>
+                <option value="PICKUP_CANCELLED">Pickup Cancelled</option>
+                <option value="USER_ACTIVATED">User Activated</option>
+                <option value="USER_DEACTIVATED">User Deactivated</option>
+              </select>
+
+              <select
+                value={auditEntityTypeFilter}
+                onChange={e => setAuditEntityTypeFilter(e.target.value)}
+                className="filter-select"
+                aria-label="Filter by entity type"
+              >
+                <option value="">All Entity Types</option>
+                <option value="report">Waste Reports</option>
+                <option value="pickup">Pickups</option>
+                <option value="user">Users</option>
+              </select>
+
+              {(auditActionFilter || auditEntityTypeFilter) && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setAuditActionFilter('');
+                    setAuditEntityTypeFilter('');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
+            <ActivityTimeline
+              activities={activities}
+              loading={loading}
+              emptyMessage="No system audit logs found matching the filter criteria."
+              showActor={true}
+            />
           </div>
         )}
       </section>

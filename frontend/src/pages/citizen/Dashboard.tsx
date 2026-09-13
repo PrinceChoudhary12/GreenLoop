@@ -5,7 +5,10 @@ import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
+import { ActivityTimeline } from '../../components/activity/ActivityTimeline';
+import { activityService } from '../../services/activityService';
 import type { WasteReport } from '../../types/report';
+import type { ActivityLogItem } from '../../types/activity';
 import './Dashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -29,49 +32,33 @@ function getStatusForBadge(status: string): 'healthy' | 'degraded' | 'unhealthy'
 export const Dashboard: React.FC = () => {
   const { user, token } = useAuth();
   const [reports, setReports] = useState<WasteReport[]>([]);
+  const [activities, setActivities] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadReports = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await reportService.getReports(token);
-      setReports(data);
+      const [reportsData, activityData] = await Promise.all([
+        reportService.getReports(token),
+        activityService.fetchCitizenActivity(token, 0, 8),
+      ]);
+      setReports(reportsData);
+      setActivities(activityData.items);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load reports.');
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data.');
     } finally {
       setLoading(false);
+      setActivityLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
-    if (!token) return;
-    let isMounted = true;
-    reportService
-      .getReports(token)
-      .then(data => {
-        if (isMounted) {
-          setReports(data);
-          setError(null);
-        }
-      })
-      .catch(err => {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load reports.');
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+    loadData();
+  }, [loadData]);
 
   const total = reports.length;
   const resolved = reports.filter(r => r.status === 'RESOLVED').length;
@@ -141,7 +128,7 @@ export const Dashboard: React.FC = () => {
             <p className="section-subtitle">Your most recently submitted waste reports.</p>
           </div>
           <div className="section-actions">
-            <button className="btn btn-ghost btn-sm" onClick={loadReports} disabled={loading} aria-label="Refresh reports">
+            <button className="btn btn-ghost btn-sm" onClick={loadData} disabled={loading} aria-label="Refresh reports">
               <RefreshCw size={14} className={loading ? 'spin' : ''} />
             </button>
             <Link to="/reports" className="view-all-link">View all →</Link>
@@ -200,6 +187,21 @@ export const Dashboard: React.FC = () => {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="dashboard-activity" style={{ marginTop: '2rem' }}>
+        <div className="section-header">
+          <div>
+            <h2 className="section-title">My Activity Timeline</h2>
+            <p className="section-subtitle">Real-time history of your reports and pickup requests.</p>
+          </div>
+        </div>
+        <ActivityTimeline
+          activities={activities}
+          loading={activityLoading}
+          emptyMessage="No activity recorded yet. Submit a report or request a pickup to see your timeline."
+          showActor={false}
+        />
       </section>
     </div>
   );

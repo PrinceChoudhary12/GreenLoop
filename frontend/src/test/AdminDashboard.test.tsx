@@ -5,6 +5,7 @@ import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { AuthContext } from '../context/useAuth';
 import { adminService } from '../services/adminService';
 import { pickupService } from '../services/pickupService';
+import { activityService } from '../services/activityService';
 import type { AdminMetrics, AdminReport, AdminUser, CollectorLookupItem } from '../types/admin';
 import type { User } from '../types/auth';
 
@@ -93,6 +94,7 @@ describe('AdminDashboard', () => {
     vi.spyOn(adminService, 'getReports').mockResolvedValue(mockReports);
     vi.spyOn(adminService, 'getCollectors').mockResolvedValue(mockCollectors);
     vi.spyOn(pickupService, 'getAdminPickups').mockResolvedValue([]);
+    vi.spyOn(activityService, 'fetchAdminActivity').mockResolvedValue({ items: [], total: 0 });
 
     render(
       <MemoryRouter>

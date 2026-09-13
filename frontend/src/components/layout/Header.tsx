@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Leaf, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { StatusBadge } from '../common/StatusBadge';
+import { NotificationBell } from '../notifications/NotificationBell';
 import type { HealthStatus } from '../../types/health';
 import './Header.css';
 
@@ -77,6 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ systemStatus }) => {
                 </>
               )}
               <div className="user-profile-menu">
+                <NotificationBell />
                 <span className="user-greeting">
                   Hi, {user?.name?.split(' ')[0]}
                   {user?.role && (

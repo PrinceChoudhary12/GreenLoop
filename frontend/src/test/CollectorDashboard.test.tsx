@@ -5,6 +5,7 @@ import { CollectorDashboard } from '../pages/collector/CollectorDashboard';
 import { AuthContext } from '../context/useAuth';
 import { collectorService } from '../services/collectorService';
 import { pickupService } from '../services/pickupService';
+import { activityService } from '../services/activityService';
 import type { User } from '../types/auth';
 import type { WasteReport } from '../types/report';
 
@@ -65,6 +66,7 @@ describe('CollectorDashboard', () => {
     vi.spyOn(collectorService, 'getAvailableReports').mockResolvedValue(mockAvailableReports);
     vi.spyOn(collectorService, 'getAssignedReports').mockResolvedValue(mockAssignedReports);
     vi.spyOn(pickupService, 'getCollectorPickups').mockResolvedValue([]);
+    vi.spyOn(activityService, 'fetchCollectorActivity').mockResolvedValue({ items: [], total: 0 });
 
     render(
       <MemoryRouter>

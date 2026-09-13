@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import AppException
 from backend.app.core.logging import get_logger
-from backend.app.models.enums import ReportPriority, ReportStatus, UserRole, WasteCategory
+from backend.app.models.enums import (
+    ActivityAction,
+    NotificationType,
+    ReportPriority,
+    ReportStatus,
+    UserRole,
+    WasteCategory,
+)
 from backend.app.models.report import WasteReport
 from backend.app.models.user import User
 from backend.app.repositories.report_repository import ReportRepository
@@ -17,6 +24,8 @@ from backend.app.schemas.admin import (
     CollectorLookupItem,
     UserAdminResponse,
 )
+from backend.app.services.activity_service import ActivityService
+from backend.app.services.notification_service import NotificationService
 
 logger = get_logger("greenloop.services.admin")
 
@@ -141,11 +150,35 @@ class AdminService:
                 error_code="ADMIN_SELF_DEACTIVATION_FORBIDDEN",
             )
 
+        old_status = target_user.is_active
         target_user.is_active = is_active
         updated = user_repo.update(target_user)
         logger.info(
             f"User #{target_user.id} ({target_user.email}) active status set to {is_active} by Admin #{current_admin_id}"
         )
+
+        if old_status != is_active:
+            action = ActivityAction.USER_ACTIVATED if is_active else ActivityAction.USER_DEACTIVATED
+            ActivityService.log_activity(
+                db=db,
+                action=action,
+                entity_type="user",
+                entity_id=target_user.id,
+                actor_id=current_admin_id,
+                target_user_id=target_user.id,
+                details=f"Account {'activated' if is_active else 'deactivated'} by administrator",
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=target_user.id,
+                notification_type=NotificationType.SYSTEM_ALERT,
+                title="Account Status Updated",
+                message=f"Your GreenLoop account has been {'activated' if is_active else 'deactivated'} by an administrator.",
+                entity_type="user",
+                entity_id=target_user.id,
+                actor_id=current_admin_id,
+            )
+
         return updated
 
     @staticmethod
@@ -255,6 +288,38 @@ class AdminService:
         logger.info(
             f"Report #{report.id} assigned to Collector #{collector.id} by Admin #{admin_user_id}"
         )
+
+        # Emit activity and notifications
+        ActivityService.log_activity(
+            db=db,
+            action=ActivityAction.REPORT_CLAIMED,
+            entity_type="report",
+            entity_id=report.id,
+            actor_id=admin_user_id,
+            target_user_id=report.user_id,
+            details=f"Assigned to Collector {collector.name} by administrator",
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=report.user_id,
+            notification_type=NotificationType.REPORT_CLAIMED,
+            title="Report Collector Assigned",
+            message=f"Administrator assigned Collector {collector.name} to your waste report #{report.id}.",
+            entity_type="report",
+            entity_id=report.id,
+            actor_id=admin_user_id,
+        )
+        NotificationService.create_notification(
+            db=db,
+            user_id=collector.id,
+            notification_type=NotificationType.REPORT_CLAIMED,
+            title="New Report Assigned",
+            message=f"You have been assigned to waste report #{report.id} ({report.category.value}).",
+            entity_type="report",
+            entity_id=report.id,
+            actor_id=admin_user_id,
+        )
+
         return updated
 
     @staticmethod
@@ -275,9 +340,32 @@ class AdminService:
                 error_code="REPORT_NOT_FOUND",
             )
 
+        old_status = report.status
         report.status = new_status
         updated = report_repo.update(report)
         logger.info(
             f"Report #{report.id} status overridden to {new_status.value} by Admin #{admin_user_id}"
         )
+
+        if old_status != new_status:
+            ActivityService.log_activity(
+                db=db,
+                action=ActivityAction.REPORT_STATUS_UPDATED,
+                entity_type="report",
+                entity_id=report.id,
+                actor_id=admin_user_id,
+                target_user_id=report.user_id,
+                details=f"Status administratively overridden from {old_status.value} to {new_status.value}",
+            )
+            NotificationService.create_notification(
+                db=db,
+                user_id=report.user_id,
+                notification_type=NotificationType.REPORT_STATUS_UPDATED,
+                title=f"Report Status: {new_status.value.replace('_', ' ').title()}",
+                message=f"Your waste report #{report.id} status was administratively updated to {new_status.value.replace('_', ' ').title()}.",
+                entity_type="report",
+                entity_id=report.id,
+                actor_id=admin_user_id,
+            )
+
         return updated

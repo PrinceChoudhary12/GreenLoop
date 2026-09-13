@@ -13,10 +13,13 @@ import {
 import { useAuth } from '../../context/useAuth';
 import { collectorService, type CollectorMeResponse } from '../../services/collectorService';
 import { pickupService } from '../../services/pickupService';
+import { activityService } from '../../services/activityService';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { ActivityTimeline } from '../../components/activity/ActivityTimeline';
 import type { ReportStatus, WasteReport } from '../../types/report';
 import type { Pickup } from '../../types/pickup';
+import type { ActivityLogItem } from '../../types/activity';
 import './CollectorDashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -43,12 +46,14 @@ export const CollectorDashboard: React.FC = () => {
   const [availableReports, setAvailableReports] = useState<WasteReport[]>([]);
   const [assignedReports, setAssignedReports] = useState<WasteReport[]>([]);
   const [assignedPickups, setAssignedPickups] = useState<Pickup[]>([]);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'pickups'>('available');
+  const [activities, setActivities] = useState<ActivityLogItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'pickups' | 'activity'>('available');
   const [assignedFilter, setAssignedFilter] = useState<'ALL' | 'ACTIVE' | 'RESOLVED'>('ALL');
   const [pickupFilter, setPickupFilter] = useState<'ALL' | 'ACTIVE' | 'COMPLETED'>('ALL');
 
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingReports, setLoadingReports] = useState(false);
+  const [loadingActivities, setLoadingActivities] = useState(false);
   const [actionInProgressId, setActionInProgressId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -56,61 +61,33 @@ export const CollectorDashboard: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!token) return;
     setLoadingReports(true);
+    setLoadingActivities(true);
     setErrorMessage(null);
     try {
-      const [me, available, assigned, pickups] = await Promise.all([
+      const [me, available, assigned, pickups, actRes] = await Promise.all([
         collectorService.getCollectorMe(token),
         collectorService.getAvailableReports(token),
         collectorService.getAssignedReports(token),
         pickupService.getCollectorPickups(token),
+        activityService.fetchCollectorActivity(token, 0, 20),
       ]);
       setProfile(me);
       setAvailableReports(available);
       setAssignedReports(assigned);
       setAssignedPickups(pickups);
+      setActivities(actRes.items);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to load collector data.');
     } finally {
       setLoadingReports(false);
+      setLoadingActivities(false);
       setLoadingProfile(false);
     }
   }, [token]);
 
   useEffect(() => {
-    if (!token) return;
-    let isMounted = true;
-
-    Promise.all([
-      collectorService.getCollectorMe(token),
-      collectorService.getAvailableReports(token),
-      collectorService.getAssignedReports(token),
-      pickupService.getCollectorPickups(token),
-    ])
-      .then(([me, available, assigned, pickups]) => {
-        if (isMounted) {
-          setProfile(me);
-          setAvailableReports(available);
-          setAssignedReports(assigned);
-          setAssignedPickups(pickups);
-          setErrorMessage(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (isMounted) {
-          setErrorMessage(err instanceof Error ? err.message : 'Failed to load collector data.');
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoadingReports(false);
-          setLoadingProfile(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+    loadData();
+  }, [loadData]);
 
   const handleClaim = async (reportId: number) => {
     if (!token) return;
@@ -335,6 +312,15 @@ export const CollectorDashboard: React.FC = () => {
           >
             Scheduled Pickups
             <span className="tab-counter">{assignedPickups.length}</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'activity'}
+            className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveTab('activity')}
+          >
+            Activity History
+            <span className="tab-counter">{activities.length}</span>
           </button>
         </div>
 
@@ -658,6 +644,25 @@ export const CollectorDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab 4: Activity History */}
+        {activeTab === 'activity' && (
+          <div className="tab-pane" role="tabpanel">
+            <div className="pane-header">
+              <div>
+                <h2>My Operational Activity</h2>
+                <p>Immutable history of reports claimed, status transitions, and pickup tasks.</p>
+              </div>
+            </div>
+
+            <ActivityTimeline
+              activities={activities}
+              loading={loadingActivities}
+              emptyMessage="No operational activity recorded yet."
+              showActor={false}
+            />
           </div>
         )}
       </section>
