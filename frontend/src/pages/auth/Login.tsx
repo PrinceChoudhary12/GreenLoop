@@ -22,7 +22,9 @@ export const Login: React.FC = () => {
     try {
       const { access_token, user } = await authService.login(email.trim(), password);
       login(access_token, user);
-      if (user.role === 'COLLECTOR') {
+      if (user.role === 'ADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'COLLECTOR') {
         navigate('/collector', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });

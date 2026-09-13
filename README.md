@@ -21,8 +21,8 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 
 ## 3. Current Version & Development Status
 
-- **Current Version**: `v0.3.0`
-- **Current Milestone**: `Milestone 03 — Waste Collection & Collector Workspaces`
+- **Current Version**: `v0.4.0`
+- **Current Milestone**: `Milestone 04 — System Administration, User Management & Report Assignment`
 - **Status**: **Completed & Verified**
 
 ### Feature Status Matrix
@@ -40,7 +40,9 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 | **Citizen Waste Reporting, Photo Upload & Report Details** | **Implemented** | Milestone 02 |
 | **Collector Registration, Workspace & Available Queue** | **Implemented** | Milestone 03 |
 | **Task Claiming & Lifecycle Status Transitions (Accepted/Resolved)** | **Implemented** | Milestone 03 |
-| Collector Assignment & Route Scheduling | *Planned* | Milestone 04 |
+| **Admin Dashboard, Platform Metrics & Analytics** | **Implemented** | Milestone 04 |
+| **User Directory Moderation & Status Activation Toggle** | **Implemented** | Milestone 04 |
+| **Manual Collector Assignment & Admin Status Override** | **Implemented** | Milestone 04 |
 | Recycling Center Discovery & Resource Directory | *Planned* | Milestone 05 |
 | Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 06 |
 
@@ -176,6 +178,12 @@ python run.py
 - **Swagger Documentation**: `http://127.0.0.1:8000/docs`
 - **ReDoc Documentation**: `http://127.0.0.1:8000/redoc`
 - **Root Health Check**: `http://127.0.0.1:8000/health`
+
+##### Bootstrapping an Administrator (CLI)
+Since admin registration is strictly restricted from public registration endpoints, create initial admin credentials via the secure CLI seed utility:
+```bash
+python scripts/create_admin.py --email admin@greenloop.org --full-name "Admin User" --password "SecureAdminPassword123!"
+```
 
 #### 2. Frontend Setup
 

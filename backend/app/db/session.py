@@ -3,6 +3,7 @@
 Configured for SQLite in local development and ready for PostgreSQL migration.
 """
 
+import os
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -10,13 +11,19 @@ from sqlalchemy.orm import Session, sessionmaker
 from backend.app.core.config import settings
 
 # Engine configuration
-# SQLite requires check_same_thread=False for multi-threaded FastAPI handlers
 connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
+db_url = settings.DATABASE_URL
+if db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+    # Resolve relative sqlite paths consistently to backend directory
+    if not db_url.startswith("sqlite:////") and db_url != "sqlite:///:memory:":
+        rel_path = db_url.replace("sqlite:///", "").lstrip("./")
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        abs_db_path = os.path.join(backend_dir, rel_path)
+        db_url = f"sqlite:///{abs_db_path}"
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     connect_args=connect_args,
     pool_pre_ping=True,
     echo=False,

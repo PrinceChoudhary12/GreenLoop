@@ -153,3 +153,9 @@
   color: #047857;
   border: 1px solid #a7f3d0;
 }
+
+.role-badge-admin {
+  background-color: #fdf4ff;
+  color: #9333ea;
+  border: 1px solid #f0abfc;
+}
