@@ -37,3 +37,14 @@ class ReportPriority(str, enum.Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+
+
+class PickupStatus(str, enum.Enum):
+    """Controlled waste pickup lifecycle statuses."""
+    REQUESTED = "REQUESTED"
+    SCHEDULED = "SCHEDULED"
+    ASSIGNED = "ASSIGNED"
+    ACCEPTED = "ACCEPTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"

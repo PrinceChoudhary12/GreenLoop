@@ -68,6 +68,9 @@ export const Header: React.FC<HeaderProps> = ({ systemStatus }) => {
                   <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
                     My Reports
                   </NavLink>
+                  <NavLink to="/pickups" className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    My Pickups
+                  </NavLink>
                   <NavLink to="/report-waste" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
                     Report Waste
                   </NavLink>

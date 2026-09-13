@@ -135,3 +135,42 @@
 .back-link {
   align-self: flex-start;
 }
+
+.pickup-success-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.pickup-success-banner .banner-link {
+  margin-left: auto;
+  color: #047857;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.btn-request-pickup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-request-pickup:hover {
+  background-color: #047857;
+}

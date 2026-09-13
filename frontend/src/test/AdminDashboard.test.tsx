@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { AuthContext } from '../context/useAuth';
 import { adminService } from '../services/adminService';
+import { pickupService } from '../services/pickupService';
 import type { AdminMetrics, AdminReport, AdminUser, CollectorLookupItem } from '../types/admin';
 import type { User } from '../types/auth';
 
@@ -91,6 +92,7 @@ describe('AdminDashboard', () => {
     vi.spyOn(adminService, 'getUsers').mockResolvedValue(mockUsers);
     vi.spyOn(adminService, 'getReports').mockResolvedValue(mockReports);
     vi.spyOn(adminService, 'getCollectors').mockResolvedValue(mockCollectors);
+    vi.spyOn(pickupService, 'getAdminPickups').mockResolvedValue([]);
 
     render(
       <MemoryRouter>

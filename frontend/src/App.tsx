@@ -7,6 +7,7 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Dashboard } from './pages/citizen/Dashboard';
 import { Reports } from './pages/citizen/Reports';
+import { Pickups } from './pages/citizen/Pickups';
 import { ReportWaste } from './pages/citizen/ReportWaste';
 import { ReportDetail } from './pages/citizen/ReportDetail';
 import { CollectorDashboard } from './pages/collector/CollectorDashboard';
@@ -102,6 +103,16 @@ export const App: React.FC = () => {
           <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <ReportDetail />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pickups"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
+            <Layout>
+              <Pickups />
             </Layout>
           </ProtectedRoute>
         }

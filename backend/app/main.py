@@ -43,6 +43,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 conn.execute(text("ALTER TABLE waste_reports ADD COLUMN collector_id INTEGER REFERENCES users(id)"))
                 conn.commit()
                 logger.info("Migrated SQLite schema: added 'collector_id' column to waste_reports.")
+
+            # Create partial unique index to ensure at most one active pickup per waste report
+            conn.execute(text("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_active_pickup_per_report
+                ON pickups (report_id)
+                WHERE status IN ('REQUESTED', 'SCHEDULED', 'ASSIGNED', 'ACCEPTED', 'IN_PROGRESS')
+            """))
+            conn.commit()
+            logger.info("Ensured partial unique index uq_active_pickup_per_report on pickups.")
     except Exception as exc:
         logger.warning(f"Schema auto-migration notice: {exc}")
 

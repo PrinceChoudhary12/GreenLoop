@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { collectorService, type CollectorMeResponse } from '../../services/collectorService';
+import { pickupService } from '../../services/pickupService';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import type { ReportStatus, WasteReport } from '../../types/report';
+import type { Pickup } from '../../types/pickup';
 import './CollectorDashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -30,8 +32,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function getStatusForBadge(status: string): 'healthy' | 'degraded' | 'unhealthy' {
-  if (status === 'RESOLVED') return 'healthy';
-  if (status === 'REJECTED') return 'unhealthy';
+  if (status === 'RESOLVED' || status === 'COMPLETED') return 'healthy';
+  if (status === 'REJECTED' || status === 'CANCELLED') return 'unhealthy';
   return 'degraded';
 }
 
@@ -40,8 +42,10 @@ export const CollectorDashboard: React.FC = () => {
   const [profile, setProfile] = useState<CollectorMeResponse | null>(null);
   const [availableReports, setAvailableReports] = useState<WasteReport[]>([]);
   const [assignedReports, setAssignedReports] = useState<WasteReport[]>([]);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned'>('available');
+  const [assignedPickups, setAssignedPickups] = useState<Pickup[]>([]);
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'pickups'>('available');
   const [assignedFilter, setAssignedFilter] = useState<'ALL' | 'ACTIVE' | 'RESOLVED'>('ALL');
+  const [pickupFilter, setPickupFilter] = useState<'ALL' | 'ACTIVE' | 'COMPLETED'>('ALL');
 
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingReports, setLoadingReports] = useState(false);
@@ -54,14 +58,16 @@ export const CollectorDashboard: React.FC = () => {
     setLoadingReports(true);
     setErrorMessage(null);
     try {
-      const [me, available, assigned] = await Promise.all([
+      const [me, available, assigned, pickups] = await Promise.all([
         collectorService.getCollectorMe(token),
         collectorService.getAvailableReports(token),
         collectorService.getAssignedReports(token),
+        pickupService.getCollectorPickups(token),
       ]);
       setProfile(me);
       setAvailableReports(available);
       setAssignedReports(assigned);
+      setAssignedPickups(pickups);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to load collector data.');
     } finally {
@@ -78,12 +84,14 @@ export const CollectorDashboard: React.FC = () => {
       collectorService.getCollectorMe(token),
       collectorService.getAvailableReports(token),
       collectorService.getAssignedReports(token),
+      pickupService.getCollectorPickups(token),
     ])
-      .then(([me, available, assigned]) => {
+      .then(([me, available, assigned, pickups]) => {
         if (isMounted) {
           setProfile(me);
           setAvailableReports(available);
           setAssignedReports(assigned);
+          setAssignedPickups(pickups);
           setErrorMessage(null);
         }
       })
@@ -138,9 +146,63 @@ export const CollectorDashboard: React.FC = () => {
     }
   };
 
+  const handlePickupAccept = async (pickupId: number) => {
+    if (!token) return;
+    setActionInProgressId(pickupId);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await pickupService.acceptPickup(token, pickupId);
+      setSuccessMessage(`Pickup #${pickupId} accepted! Prepare for route collection.`);
+      await loadData();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to accept pickup.');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  const handlePickupStart = async (pickupId: number) => {
+    if (!token) return;
+    setActionInProgressId(pickupId);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await pickupService.startPickup(token, pickupId);
+      setSuccessMessage(`Pickup #${pickupId} is now in progress.`);
+      await loadData();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to start pickup transit.');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  const handlePickupComplete = async (pickupId: number) => {
+    if (!token) return;
+    setActionInProgressId(pickupId);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await pickupService.completePickup(token, pickupId);
+      setSuccessMessage(`Pickup #${pickupId} marked complete! Associated report resolved.`);
+      await loadData();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to complete pickup.');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
   const filteredAssigned = assignedReports.filter(r => {
     if (assignedFilter === 'ACTIVE') return ['UNDER_REVIEW', 'ACCEPTED'].includes(r.status);
     if (assignedFilter === 'RESOLVED') return r.status === 'RESOLVED';
+    return true;
+  });
+
+  const filteredPickups = assignedPickups.filter(p => {
+    if (pickupFilter === 'ACTIVE') return ['ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(p.status);
+    if (pickupFilter === 'COMPLETED') return p.status === 'COMPLETED';
     return true;
   });
 
@@ -200,7 +262,19 @@ export const CollectorDashboard: React.FC = () => {
           </div>
           <div className="metric-body">
             <span className="metric-value">{profile?.metrics.active_count ?? 0}</span>
-            <span className="metric-label">Active Workload</span>
+            <span className="metric-label">Active Reports</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap icon-progress">
+            <Truck size={22} aria-hidden="true" />
+          </div>
+          <div className="metric-body">
+            <span className="metric-value">
+              {assignedPickups.filter(p => ['ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(p.status)).length}
+            </span>
+            <span className="metric-label">Active Pickups</span>
           </div>
         </div>
 
@@ -209,18 +283,10 @@ export const CollectorDashboard: React.FC = () => {
             <CheckCircle2 size={22} aria-hidden="true" />
           </div>
           <div className="metric-body">
-            <span className="metric-value">{profile?.metrics.resolved_count ?? 0}</span>
-            <span className="metric-label">Resolved Pickups</span>
-          </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-icon-wrap icon-total">
-            <PackageCheck size={22} aria-hidden="true" />
-          </div>
-          <div className="metric-body">
-            <span className="metric-value">{profile?.metrics.assigned_count ?? assignedReports.length}</span>
-            <span className="metric-label">Total Assigned</span>
+            <span className="metric-value">
+              {(profile?.metrics.resolved_count ?? 0) + assignedPickups.filter(p => p.status === 'COMPLETED').length}
+            </span>
+            <span className="metric-label">Resolved / Completed</span>
           </div>
         </div>
       </section>
@@ -258,8 +324,17 @@ export const CollectorDashboard: React.FC = () => {
             className={`tab-btn ${activeTab === 'assigned' ? 'active' : ''}`}
             onClick={() => setActiveTab('assigned')}
           >
-            My Assigned Tasks
+            Claimed Reports
             <span className="tab-counter">{assignedReports.length}</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'pickups'}
+            className={`tab-btn ${activeTab === 'pickups' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pickups')}
+          >
+            Scheduled Pickups
+            <span className="tab-counter">{assignedPickups.length}</span>
           </button>
         </div>
 
@@ -448,6 +523,135 @@ export const CollectorDashboard: React.FC = () => {
 
                       {['RESOLVED', 'REJECTED'].includes(report.status) && (
                         <span className="task-closed-label">Task finalized ({report.status.toLowerCase()})</span>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: Scheduled Pickups */}
+        {activeTab === 'pickups' && (
+          <div className="tab-pane" role="tabpanel">
+            <div className="pane-header-with-filter">
+              <div>
+                <h2>Assigned Waste Pickups</h2>
+                <p>On-site collection orders assigned to you. Accept, start collection route, and mark completed.</p>
+              </div>
+
+              <div className="filter-pill-group" role="group" aria-label="Filter pickups">
+                <button
+                  className={`filter-pill ${pickupFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setPickupFilter('ALL')}
+                >
+                  All ({assignedPickups.length})
+                </button>
+                <button
+                  className={`filter-pill ${pickupFilter === 'ACTIVE' ? 'active' : ''}`}
+                  onClick={() => setPickupFilter('ACTIVE')}
+                >
+                  Active ({assignedPickups.filter(p => ['ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(p.status)).length})
+                </button>
+                <button
+                  className={`filter-pill ${pickupFilter === 'COMPLETED' ? 'active' : ''}`}
+                  onClick={() => setPickupFilter('COMPLETED')}
+                >
+                  Completed ({assignedPickups.filter(p => p.status === 'COMPLETED').length})
+                </button>
+              </div>
+            </div>
+
+            {filteredPickups.length === 0 ? (
+              <div className="empty-queue-card">
+                <Truck size={48} className="empty-icon" />
+                <h3>No scheduled pickups in this view</h3>
+                <p>Pickups scheduled and assigned to you by administrators will appear here.</p>
+              </div>
+            ) : (
+              <div className="reports-grid">
+                {filteredPickups.map(pickup => (
+                  <article key={pickup.id} className="report-collector-card assigned-card">
+                    <div className="card-top">
+                      <div className="card-cat-priority">
+                        {pickup.report?.category && (
+                          <span className="category-tag">{CATEGORY_LABELS[pickup.report.category] || pickup.report.category}</span>
+                        )}
+                        <StatusBadge
+                          status={getStatusForBadge(pickup.status)}
+                          label={pickup.status.replace('_', ' ')}
+                        />
+                      </div>
+                      <span className="report-id-pill">Pickup #{pickup.id}</span>
+                    </div>
+
+                    <h3 className="card-location">
+                      {pickup.report?.location || 'Location details in report'}
+                    </h3>
+                    {pickup.report?.description && (
+                      <p className="card-description">{pickup.report.description}</p>
+                    )}
+
+                    <div className="pickup-schedule-box">
+                      <div className="schedule-row">
+                        <strong>Date:</strong>{' '}
+                        {pickup.scheduled_date ? new Date(pickup.scheduled_date).toLocaleDateString() : 'TBD'}
+                      </div>
+                      <div className="schedule-row">
+                        <strong>Time Window:</strong> {pickup.time_slot || 'Pending slot'}
+                      </div>
+                      {pickup.contact_phone && (
+                        <div className="schedule-row">
+                          <strong>Citizen Phone:</strong> {pickup.contact_phone}
+                        </div>
+                      )}
+                    </div>
+
+                    {pickup.notes && (
+                      <div className="pickup-notes-card">
+                        <strong>Notes:</strong> {pickup.notes}
+                      </div>
+                    )}
+
+                    {/* Operational Action Controls */}
+                    <div className="card-actions-row">
+                      {pickup.status === 'ASSIGNED' && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          disabled={actionInProgressId === pickup.id}
+                          onClick={() => handlePickupAccept(pickup.id)}
+                        >
+                          <CheckCircle2 size={14} /> Accept Pickup
+                        </button>
+                      )}
+
+                      {pickup.status === 'ACCEPTED' && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          disabled={actionInProgressId === pickup.id}
+                          onClick={() => handlePickupStart(pickup.id)}
+                        >
+                          <Truck size={14} /> Start Route / In Progress
+                        </button>
+                      )}
+
+                      {pickup.status === 'IN_PROGRESS' && (
+                        <button
+                          className="btn btn-primary btn-sm btn-resolve"
+                          disabled={actionInProgressId === pickup.id}
+                          onClick={() => handlePickupComplete(pickup.id)}
+                        >
+                          <CheckCircle2 size={14} /> Complete & Resolve Report
+                        </button>
+                      )}
+
+                      {pickup.status === 'COMPLETED' && (
+                        <span className="task-closed-label">Pickup completed</span>
+                      )}
+
+                      {pickup.status === 'CANCELLED' && (
+                        <span className="task-closed-label">Cancelled ({pickup.cancellation_reason || 'N/A'})</span>
                       )}
                     </div>
                   </article>

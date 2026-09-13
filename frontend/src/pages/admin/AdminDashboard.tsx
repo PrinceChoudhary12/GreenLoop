@@ -14,13 +14,16 @@ import {
   UserPlus,
   Users,
   UserX,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { adminService } from '../../services/adminService';
+import { pickupService } from '../../services/pickupService';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import type { AdminMetrics, AdminReport, AdminUser, CollectorLookupItem } from '../../types/admin';
 import type { ReportStatus } from '../../types/report';
+import type { Pickup, PickupStatus } from '../../types/pickup';
 import './AdminDashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -36,8 +39,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function getStatusForBadge(status: string): 'healthy' | 'degraded' | 'unhealthy' {
-  if (status === 'RESOLVED') return 'healthy';
-  if (status === 'REJECTED') return 'unhealthy';
+  if (status === 'RESOLVED' || status === 'COMPLETED') return 'healthy';
+  if (status === 'REJECTED' || status === 'CANCELLED') return 'unhealthy';
   return 'degraded';
 }
 
@@ -47,8 +50,9 @@ export const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [collectors, setCollectors] = useState<CollectorLookupItem[]>([]);
+  const [pickups, setPickups] = useState<Pickup[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'users' | 'reports'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'reports' | 'pickups'>('users');
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,9 +69,20 @@ export const AdminDashboard: React.FC = () => {
   const [reportPriorityFilter, setReportPriorityFilter] = useState<string>('');
   const [reportSearchQuery, setReportSearchQuery] = useState<string>('');
 
+  // Pickup filters
+  const [pickupStatusFilter, setPickupStatusFilter] = useState<string>('');
+  const [pickupSearchQuery, setPickupSearchQuery] = useState<string>('');
+
   // Assignment state modal / selection
   const [selectedReportForAssign, setSelectedReportForAssign] = useState<AdminReport | null>(null);
   const [selectedCollectorId, setSelectedCollectorId] = useState<number | ''>('');
+
+  // Pickup Schedule / Assign Modal state
+  const [selectedPickupForSchedule, setSelectedPickupForSchedule] = useState<Pickup | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>('');
+  const [scheduleTimeSlot, setScheduleTimeSlot] = useState<string>('Morning (09:00 - 12:00)');
+  const [scheduleCollectorId, setScheduleCollectorId] = useState<number | ''>('');
+  const [scheduleNotes, setScheduleNotes] = useState<string>('');
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
@@ -81,7 +96,7 @@ export const AdminDashboard: React.FC = () => {
           ? false
           : undefined;
 
-      const [m, u, r, c] = await Promise.all([
+      const [m, u, r, c, p] = await Promise.all([
         adminService.getMetrics(token),
         adminService.getUsers(token, {
           role: userRoleFilter || undefined,
@@ -95,11 +110,16 @@ export const AdminDashboard: React.FC = () => {
           search: reportSearchQuery.trim() || undefined,
         }),
         adminService.getCollectors(token),
+        pickupService.getAdminPickups(token, {
+          status: (pickupStatusFilter as PickupStatus) || undefined,
+          search: pickupSearchQuery.trim() || undefined,
+        }),
       ]);
       setMetrics(m);
       setUsers(u);
       setReports(r);
       setCollectors(c);
+      setPickups(p);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to load administrator data.');
     } finally {
@@ -114,6 +134,8 @@ export const AdminDashboard: React.FC = () => {
     reportCategoryFilter,
     reportPriorityFilter,
     reportSearchQuery,
+    pickupStatusFilter,
+    pickupSearchQuery,
   ]);
 
   useEffect(() => {
@@ -141,13 +163,18 @@ export const AdminDashboard: React.FC = () => {
         search: reportSearchQuery.trim() || undefined,
       }),
       adminService.getCollectors(token),
+      pickupService.getAdminPickups(token, {
+        status: (pickupStatusFilter as PickupStatus) || undefined,
+        search: pickupSearchQuery.trim() || undefined,
+      }),
     ])
-      .then(([m, u, r, c]) => {
+      .then(([m, u, r, c, p]) => {
         if (isMounted) {
           setMetrics(m);
           setUsers(u);
           setReports(r);
           setCollectors(c);
+          setPickups(p);
           setErrorMessage(null);
         }
       })
@@ -174,6 +201,8 @@ export const AdminDashboard: React.FC = () => {
     reportCategoryFilter,
     reportPriorityFilter,
     reportSearchQuery,
+    pickupStatusFilter,
+    pickupSearchQuery,
   ]);
 
   const handleToggleUserStatus = async (targetUser: AdminUser) => {
@@ -229,6 +258,36 @@ export const AdminDashboard: React.FC = () => {
       await loadAllData();
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to override report status.');
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleSchedulePickupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !selectedPickupForSchedule || !scheduleDate) return;
+    setActionInProgress(`schedule-${selectedPickupForSchedule.id}`);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const updated = await pickupService.schedulePickup(token, selectedPickupForSchedule.id, {
+        scheduled_date: scheduleDate,
+        time_slot: scheduleTimeSlot,
+        collector_id: scheduleCollectorId ? Number(scheduleCollectorId) : undefined,
+        notes: scheduleNotes.trim() || undefined,
+      });
+      setSuccessMessage(
+        `Pickup #${updated.id} scheduled for ${scheduleDate} (${scheduleTimeSlot})${
+          updated.collector ? ` and assigned to ${updated.collector.name}` : ''
+        }.`
+      );
+      setSelectedPickupForSchedule(null);
+      setScheduleDate('');
+      setScheduleCollectorId('');
+      setScheduleNotes('');
+      await loadAllData();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to schedule pickup.');
     } finally {
       setActionInProgress(null);
     }
@@ -295,11 +354,11 @@ export const AdminDashboard: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-icon-wrap icon-resolved">
-            <CheckCircle2 size={22} aria-hidden="true" />
+            <Truck size={22} aria-hidden="true" />
           </div>
           <div className="metric-body">
-            <span className="metric-value">{metrics?.resolved_reports ?? '—'}</span>
-            <span className="metric-label">Resolved Pickups</span>
+            <span className="metric-value">{pickups.length}</span>
+            <span className="metric-label">Total Pickups ({pickups.filter(p => ['REQUESTED', 'SCHEDULED', 'ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(p.status)).length} Active)</span>
           </div>
         </div>
       </section>
@@ -341,6 +400,16 @@ export const AdminDashboard: React.FC = () => {
             <PackageCheck size={16} />
             Platform Waste Reports
             <span className="tab-counter">{reports.length}</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'pickups'}
+            className={`admin-tab-btn ${activeTab === 'pickups' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pickups')}
+          >
+            <Truck size={16} />
+            Pickup Logistics
+            <span className="tab-counter">{pickups.length}</span>
           </button>
         </div>
 
@@ -643,9 +712,137 @@ export const AdminDashboard: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Tab 3: Pickup Logistics */}
+        {activeTab === 'pickups' && (
+          <div className="tab-pane" role="tabpanel">
+            <div className="filter-toolbar">
+              <div className="search-box">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search report location, notes, or citizen phone..."
+                  value={pickupSearchQuery}
+                  onChange={e => setPickupSearchQuery(e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+
+              <div className="filter-group">
+                <select
+                  value={pickupStatusFilter}
+                  onChange={e => setPickupStatusFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Pickup Statuses</option>
+                  <option value="REQUESTED">Requested</option>
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="ASSIGNED">Assigned</option>
+                  <option value="ACCEPTED">Accepted</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            </div>
+
+            {pickups.length === 0 ? (
+              <div className="admin-empty-state">
+                <Truck size={48} className="empty-icon" />
+                <h3>No pickups found</h3>
+                <p>No waste pickup requests match your filter criteria.</p>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table" aria-label="Platform Pickups">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Linked Report</th>
+                      <th>Citizen</th>
+                      <th>Assigned Collector</th>
+                      <th>Schedule Window</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pickups.map(p => (
+                      <tr key={p.id}>
+                        <td>
+                          <span className="user-id-badge">#{p.id}</span>
+                        </td>
+                        <td>
+                          <div className="report-desc-cell">
+                            <span className="report-cat-tag">
+                              Report #{p.report_id} {p.report?.category && `• ${p.report.category}`}
+                            </span>
+                            <span className="report-loc">{p.report?.location || 'Location in report'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="user-cell">
+                            <span className="user-name">{p.user?.name || `User #${p.user_id}`}</span>
+                            <span className="user-email">{p.contact_phone || p.user?.email}</span>
+                          </div>
+                        </td>
+                        <td>
+                          {p.collector ? (
+                            <div className="collector-assigned-tag">
+                              <UserCheck size={14} />
+                              <span>{p.collector.name}</span>
+                            </div>
+                          ) : (
+                            <span className="collector-unassigned-tag">Unassigned</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="schedule-cell">
+                            <span className="schedule-date">
+                              {p.scheduled_date ? new Date(p.scheduled_date).toLocaleDateString() : 'Unscheduled'}
+                            </span>
+                            <span className="schedule-slot">{p.time_slot || 'Pending slot'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <StatusBadge
+                            status={getStatusForBadge(p.status)}
+                            label={p.status.replace('_', ' ')}
+                          />
+                        </td>
+                        <td>
+                          <div className="report-actions-cell">
+                            {p.status !== 'COMPLETED' && p.status !== 'CANCELLED' && p.status !== 'IN_PROGRESS' && (
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => {
+                                  setSelectedPickupForSchedule(p);
+                                  setScheduleDate(
+                                    p.scheduled_date
+                                      ? new Date(p.scheduled_date).toISOString().split('T')[0]
+                                      : ''
+                                  );
+                                  setScheduleTimeSlot(p.time_slot || 'Morning (09:00 - 12:00)');
+                                  setScheduleCollectorId(p.collector_id || '');
+                                  setScheduleNotes(p.notes || '');
+                                }}
+                              >
+                                <Calendar size={14} /> Schedule & Assign
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      {/* Assignment Modal Dialog */}
+      {/* Report Assignment Modal Dialog */}
       {selectedReportForAssign && (
         <div className="admin-modal-overlay" role="dialog" aria-modal="true">
           <div className="admin-modal-card">
@@ -704,6 +901,121 @@ export const AdminDashboard: React.FC = () => {
                     disabled={!selectedCollectorId || actionInProgress === `assign-${selectedReportForAssign.id}`}
                   >
                     {actionInProgress === `assign-${selectedReportForAssign.id}` ? 'Assigning...' : 'Confirm Assignment'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pickup Schedule & Assign Modal Dialog */}
+      {selectedPickupForSchedule && (
+        <div className="admin-modal-overlay" role="dialog" aria-modal="true">
+          <div className="admin-modal-card">
+            <div className="modal-header">
+              <h2>Schedule Pickup #{selectedPickupForSchedule.id}</h2>
+              <button
+                className="modal-close-btn"
+                onClick={() => setSelectedPickupForSchedule(null)}
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="modal-detail">
+                <strong>Linked Report:</strong> #{selectedPickupForSchedule.report_id}
+                {selectedPickupForSchedule.report?.location && ` (${selectedPickupForSchedule.report.location})`}
+              </p>
+              <p className="modal-detail">
+                <strong>Citizen Phone:</strong> {selectedPickupForSchedule.contact_phone || 'None provided'}
+              </p>
+
+              <form onSubmit={handleSchedulePickupSubmit} className="assign-form">
+                <div className="form-group">
+                  <label htmlFor="adminScheduleDate" className="form-label">
+                    Scheduled Date *
+                  </label>
+                  <input
+                    id="adminScheduleDate"
+                    type="date"
+                    value={scheduleDate}
+                    onChange={e => setScheduleDate(e.target.value)}
+                    required
+                    className="filter-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="adminTimeSlot" className="form-label">
+                    Time Window *
+                  </label>
+                  <select
+                    id="adminTimeSlot"
+                    value={scheduleTimeSlot}
+                    onChange={e => setScheduleTimeSlot(e.target.value)}
+                    required
+                    className="form-select"
+                  >
+                    <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
+                    <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
+                    <option value="Evening (16:00 - 19:00)">Evening (16:00 - 19:00)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="adminPickupCollector" className="form-label">
+                    Assign Collector (Optional)
+                  </label>
+                  <select
+                    id="adminPickupCollector"
+                    value={scheduleCollectorId}
+                    onChange={e => setScheduleCollectorId(e.target.value ? Number(e.target.value) : '')}
+                    className="form-select"
+                  >
+                    <option value="">-- No collector assigned (Schedule only) --</option>
+                    {collectors.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.email}) — {c.active_tasks_count} active tasks
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="adminPickupNotes" className="form-label">
+                    Administrative Notes
+                  </label>
+                  <textarea
+                    id="adminPickupNotes"
+                    rows={2}
+                    value={scheduleNotes}
+                    onChange={e => setScheduleNotes(e.target.value)}
+                    placeholder="e.g. Dispatched for secondary sorting route"
+                    className="filter-input"
+                    style={{ width: '100%', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-md"
+                    onClick={() => setSelectedPickupForSchedule(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-md"
+                    disabled={!scheduleDate || actionInProgress === `schedule-${selectedPickupForSchedule.id}`}
+                  >
+                    {actionInProgress === `schedule-${selectedPickupForSchedule.id}`
+                      ? 'Saving...'
+                      : 'Confirm Schedule'}
                   </button>
                 </div>
               </form>

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { CollectorDashboard } from '../pages/collector/CollectorDashboard';
 import { AuthContext } from '../context/useAuth';
 import { collectorService } from '../services/collectorService';
+import { pickupService } from '../services/pickupService';
 import type { User } from '../types/auth';
 import type { WasteReport } from '../types/report';
 
@@ -63,6 +64,7 @@ describe('CollectorDashboard', () => {
     });
     vi.spyOn(collectorService, 'getAvailableReports').mockResolvedValue(mockAvailableReports);
     vi.spyOn(collectorService, 'getAssignedReports').mockResolvedValue(mockAssignedReports);
+    vi.spyOn(pickupService, 'getCollectorPickups').mockResolvedValue([]);
 
     render(
       <MemoryRouter>
@@ -86,7 +88,7 @@ describe('CollectorDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText(/Collector Workspace/i)).toBeInTheDocument();
       expect(screen.getByText(/Open in Queue/i)).toBeInTheDocument();
-      expect(screen.getByText(/Active Workload/i)).toBeInTheDocument();
+      expect(screen.getByText(/Active Reports/i)).toBeInTheDocument();
       expect(screen.getByText(/Corner of 4th Ave & Elm/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Claim report #101/i })).toBeInTheDocument();
     });

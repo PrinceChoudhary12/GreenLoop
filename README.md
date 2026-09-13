@@ -21,8 +21,8 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 
 ## 3. Current Version & Development Status
 
-- **Current Version**: `v0.4.0`
-- **Current Milestone**: `Milestone 04 — System Administration, User Management & Report Assignment`
+- **Current Version**: `v0.5.0`
+- **Current Milestone**: `Milestone 05 — End-to-End Pickup Workflow & Real-Time Logistics Coordination`
 - **Status**: **Completed & Verified**
 
 ### Feature Status Matrix
@@ -43,8 +43,11 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 | **Admin Dashboard, Platform Metrics & Analytics** | **Implemented** | Milestone 04 |
 | **User Directory Moderation & Status Activation Toggle** | **Implemented** | Milestone 04 |
 | **Manual Collector Assignment & Admin Status Override** | **Implemented** | Milestone 04 |
-| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 05 |
-| Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 06 |
+| **Scheduled Waste Pickup Requests & Duplicate Concurrency Guard** | **Implemented** | Milestone 05 |
+| **Multi-Role Pickup Logistics Lifecycle (Schedule → Assign → Accept → In Progress → Complete)** | **Implemented** | Milestone 05 |
+| **Role-Enforced Cancellation Rules & Atomic Waste Report Resolution** | **Implemented** | Milestone 05 |
+| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 06 |
+| Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 07 |
 
 ---
 
