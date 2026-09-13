@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, RefreshCw } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
@@ -25,7 +25,7 @@ export const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
@@ -36,9 +36,34 @@ export const Reports: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  useEffect(() => { loadReports(); }, [token]);
+  useEffect(() => {
+    if (!token) return;
+    let isMounted = true;
+    reportService
+      .getReports(token)
+      .then(data => {
+        if (isMounted) {
+          setReports(data);
+          setError(null);
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load reports.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   return (
     <div className="reports-page">

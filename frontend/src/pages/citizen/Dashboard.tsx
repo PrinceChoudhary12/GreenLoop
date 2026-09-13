@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ClipboardList, Plus, RefreshCw } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
@@ -32,7 +32,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
@@ -44,13 +44,39 @@ export const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  useEffect(() => { loadReports(); }, [token]);
+  useEffect(() => {
+    if (!token) return;
+    let isMounted = true;
+    reportService
+      .getReports(token)
+      .then(data => {
+        if (isMounted) {
+          setReports(data);
+          setError(null);
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load reports.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   const total = reports.length;
   const resolved = reports.filter(r => r.status === 'RESOLVED').length;
   const submitted = reports.filter(r => r.status === 'SUBMITTED').length;
+  const inProgress = reports.filter(r => ['UNDER_REVIEW', 'ACCEPTED'].includes(r.status)).length;
   const recent = reports.slice(0, 5);
 
   return (
@@ -58,7 +84,7 @@ export const Dashboard: React.FC = () => {
       <section className="dashboard-greeting">
         <div>
           <h1 className="greeting-title">{getGreeting()}, {user?.name?.split(' ')[0]} 👋</h1>
-          <p className="greeting-subtitle">Here's a snapshot of your GreenLoop activity.</p>
+          <p className="greeting-sub">Welcome back to your GreenLoop citizen dashboard.</p>
         </div>
         <Link to="/report-waste" className="btn btn-primary btn-md report-cta">
           <Plus size={16} aria-hidden="true" />
@@ -66,77 +92,112 @@ export const Dashboard: React.FC = () => {
         </Link>
       </section>
 
-      <section className="stats-grid" aria-label="Activity overview">
-        <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-blue">
+      <section className="dashboard-metrics" aria-label="Key statistics">
+        <div className="metric-card">
+          <div className="metric-icon-wrap icon-primary">
             <ClipboardList size={22} aria-hidden="true" />
           </div>
-          <div className="stat-value">{total}</div>
-          <div className="stat-label">Total Reports</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-green">
-            <CheckCircle2 size={22} aria-hidden="true" />
+          <div className="metric-body">
+            <span className="metric-value">{loading ? '—' : total}</span>
+            <span className="metric-label">Total Reports</span>
           </div>
-          <div className="stat-value">{resolved}</div>
-          <div className="stat-label">Resolved</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-yellow">
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap icon-warning">
             <AlertTriangle size={22} aria-hidden="true" />
           </div>
-          <div className="stat-value">{submitted}</div>
-          <div className="stat-label">Awaiting Review</div>
+          <div className="metric-body">
+            <span className="metric-value">{loading ? '—' : submitted}</span>
+            <span className="metric-label">Submitted / Pending</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap icon-info">
+            <RefreshCw size={22} aria-hidden="true" />
+          </div>
+          <div className="metric-body">
+            <span className="metric-value">{loading ? '—' : inProgress}</span>
+            <span className="metric-label">In Progress</span>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon-wrap icon-success">
+            <CheckCircle2 size={22} aria-hidden="true" />
+          </div>
+          <div className="metric-body">
+            <span className="metric-value">{loading ? '—' : resolved}</span>
+            <span className="metric-label">Resolved</span>
+          </div>
         </div>
       </section>
 
-      <section className="recent-section">
+      <section className="dashboard-recent">
         <div className="section-header">
-          <h2 className="section-title">Recent Reports</h2>
+          <div>
+            <h2 className="section-title">Recent Reports</h2>
+            <p className="section-subtitle">Your most recently submitted waste reports.</p>
+          </div>
           <div className="section-actions">
             <button className="btn btn-ghost btn-sm" onClick={loadReports} disabled={loading} aria-label="Refresh reports">
               <RefreshCw size={14} className={loading ? 'spin' : ''} />
             </button>
-            <Link to="/reports" className="btn btn-outline btn-sm">View all</Link>
+            <Link to="/reports" className="view-all-link">View all →</Link>
           </div>
         </div>
 
         {loading && (
-          <div className="loading-state" aria-live="polite" aria-label="Loading reports">
+          <div className="loading-state" aria-live="polite">
             <div className="loading-spinner" aria-hidden="true" />
-            <p>Loading your reports...</p>
+            <p>Loading reports...</p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="error-state" role="alert">
-            <p>{error}</p>
-          </div>
+          <div className="error-state" role="alert"><p>{error}</p></div>
         )}
 
         {!loading && !error && reports.length === 0 && (
           <div className="empty-state">
-            <div className="empty-icon">🌿</div>
-            <h3>No reports yet</h3>
-            <p>Help keep your community clean by reporting waste in your area.</p>
-            <Link to="/report-waste" className="btn btn-primary btn-md">Submit your first report</Link>
+            <div className="empty-icon">🌱</div>
+            <h2>No reports yet</h2>
+            <p>You have not submitted any waste reports. Start helping your community today!</p>
+            <Link to="/report-waste" className="btn btn-primary btn-md">Report Waste Now</Link>
           </div>
         )}
 
         {!loading && !error && recent.length > 0 && (
-          <div className="report-list">
-            {recent.map(report => (
-              <Link to={`/reports/${report.id}`} key={report.id} className="report-list-item" aria-label={`View report: ${CATEGORY_LABELS[report.category]}`}>
-                <div className="report-list-left">
-                  <span className="report-category">{CATEGORY_LABELS[report.category]}</span>
-                  <span className="report-location">{report.location}</span>
-                </div>
-                <div className="report-list-right">
-                  <PriorityBadge priority={report.priority} />
-                  <StatusBadge status={getStatusForBadge(report.status)} label={report.status.replace('_', ' ')} />
-                </div>
-              </Link>
-            ))}
+          <div className="reports-table-wrap">
+            <table className="reports-table" aria-label="Recent waste reports">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Location</th>
+                  <th scope="col">Priority</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Date</th>
+                  <th scope="col"><span className="sr-only">View</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map(r => (
+                  <tr key={r.id} className="report-row">
+                    <td className="report-id">{r.id}</td>
+                    <td className="report-cat">{CATEGORY_LABELS[r.category]}</td>
+                    <td className="report-loc">{r.location}</td>
+                    <td><PriorityBadge priority={r.priority} /></td>
+                    <td><StatusBadge status={getStatusForBadge(r.status)} label={r.status.replace('_', ' ')} /></td>
+                    <td className="report-date">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <Link to={`/reports/${r.id}`} className="view-link" aria-label={`View report #${r.id}`}>View →</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

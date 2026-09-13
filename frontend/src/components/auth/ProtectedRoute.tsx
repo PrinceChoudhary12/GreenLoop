@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,8 +12,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <div className="auth-loading" aria-live="polite" aria-label="Verifying session...">
-        <div className="auth-loading-spinner" aria-hidden="true" />
+      <div className="auth-loading-screen" aria-live="polite">
+        <div className="auth-loading-spinner" />
         <p>Verifying session...</p>
       </div>
     );

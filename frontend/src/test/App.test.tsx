@@ -1,11 +1,24 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import * as api from '../services/api';
+import { AuthProvider } from '../context/AuthContext';
+
+function renderApplication(initialPath = '/') {
+  return render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </MemoryRouter>
+  );
+}
 
 describe('App Component', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    localStorage.clear();
   });
 
   it('renders application title and loading state initially', async () => {
@@ -31,8 +44,8 @@ describe('App Component', () => {
         )
     );
 
-    render(<App />);
-    expect(screen.getByText(/GreenLoop/i)).toBeInTheDocument();
+    renderApplication();
+    expect(screen.getAllByText(/GreenLoop/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Milestone 01 — Master Architecture & Foundation/i)).toBeInTheDocument();
 
     await waitFor(() => {
@@ -43,7 +56,7 @@ describe('App Component', () => {
   it('renders error notice if backend health check fails', async () => {
     vi.spyOn(api, 'fetchHealth').mockRejectedValue(new Error('Network error'));
 
-    render(<App />);
+    renderApplication();
 
     await waitFor(() => {
       expect(screen.getByText(/Backend Connection Notice/i)).toBeInTheDocument();

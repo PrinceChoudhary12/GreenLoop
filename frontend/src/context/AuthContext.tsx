@@ -1,40 +1,44 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { AuthState, User } from '../types/auth';
 import { authService } from '../services/authService';
+import { AuthContext } from './useAuth';
 
 const TOKEN_KEY = 'greenloop_token';
 
-interface AuthContextValue extends AuthState {
-  login: (token: string, user: User) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    isLoading: true,
+  const [state, setState] = useState<AuthState>(() => {
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+    return {
+      user: null,
+      token: savedToken,
+      isAuthenticated: false,
+      isLoading: Boolean(savedToken),
+    };
   });
 
   // Restore session from localStorage on app load
   useEffect(() => {
     const savedToken = localStorage.getItem(TOKEN_KEY);
-    if (!savedToken) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      return;
-    }
+    if (!savedToken) return;
+
+    let isMounted = true;
     authService
       .getMe(savedToken)
       .then(user => {
-        setState({ user, token: savedToken, isAuthenticated: true, isLoading: false });
+        if (isMounted) {
+          setState({ user, token: savedToken, isAuthenticated: true, isLoading: false });
+        }
       })
       .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        if (isMounted) {
+          localStorage.removeItem(TOKEN_KEY);
+          setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        }
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = useCallback((token: string, user: User) => {
@@ -53,9 +57,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
-  return ctx;
-}

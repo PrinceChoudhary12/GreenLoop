@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Tag, Flag } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
@@ -31,18 +31,39 @@ export const ReportDetail: React.FC = () => {
 
   useEffect(() => {
     if (!token || !id) return;
-    const numId = parseInt(id, 10);
-    if (isNaN(numId)) {
-      setError('Invalid report ID.');
-      setLoading(false);
-      return;
+    let isMounted = true;
+
+    async function fetchReport() {
+      const numId = parseInt(id!, 10);
+      if (isNaN(numId)) {
+        if (isMounted) {
+          setError('Invalid report ID.');
+          setLoading(false);
+        }
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await reportService.getReport(token!, numId);
+        if (isMounted) {
+          setReport(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load report.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
-    setLoading(true);
-    reportService
-      .getReport(token, numId)
-      .then(data => setReport(data))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load report.'))
-      .finally(() => setLoading(false));
+
+    fetchReport();
+
+    return () => {
+      isMounted = false;
+    };
   }, [token, id]);
 
   if (loading) {
@@ -112,11 +133,11 @@ export const ReportDetail: React.FC = () => {
           </div>
         )}
 
-        {report.image_url && (
+        {report.image_path && (
           <div className="detail-section">
             <h2 className="detail-section-title">Photo</h2>
             <img
-              src={`${API_BASE}${report.image_url}`}
+              src={`${API_BASE}${report.image_path}`}
               alt="Waste photo submitted with report"
               className="detail-image"
             />

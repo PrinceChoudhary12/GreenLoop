@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { authService } from '../../services/authService';
 import './Auth.css';
 
@@ -24,7 +24,7 @@ function validate(form: FormState): FormErrors {
   if (!form.name.trim() || form.name.trim().length < 2) {
     errors.name = 'Name must be at least 2 characters.';
   }
-  if (!form.email.trim() || !/^[\w.+\-]+@([\w-]+\.)+[a-zA-Z]{2,}$/.test(form.email.trim())) {
+  if (!form.email.trim() || !/^[\w.+-]+@([\w-]+\.)+[a-zA-Z]{2,}$/.test(form.email.trim())) {
     errors.email = 'Please enter a valid email address.';
   }
   if (form.password.length < 8) {

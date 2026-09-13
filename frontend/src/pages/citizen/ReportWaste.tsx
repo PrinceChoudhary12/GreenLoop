@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ImagePlus, X } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { reportService } from '../../services/reportService';
 import type { ReportPriority, WasteCategory } from '../../types/report';
 import '../auth/Auth.css';
