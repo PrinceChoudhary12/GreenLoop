@@ -62,10 +62,23 @@ def get_current_user(
 def get_current_active_citizen(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    """Enforce that the authenticated user is a Citizen."""
+    """Enforce that the authenticated user is a Citizen or Admin."""
     if current_user.role != UserRole.CITIZEN and current_user.role != UserRole.ADMIN:
         raise AppException(
             message="Operation permitted for Citizens only.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="FORBIDDEN_ROLE",
+        )
+    return current_user
+
+
+def get_current_active_collector(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Enforce that the authenticated user is a Collector or Admin."""
+    if current_user.role != UserRole.COLLECTOR and current_user.role != UserRole.ADMIN:
+        raise AppException(
+            message="Operation permitted for Collectors only.",
             status_code=status.HTTP_403_FORBIDDEN,
             error_code="FORBIDDEN_ROLE",
         )

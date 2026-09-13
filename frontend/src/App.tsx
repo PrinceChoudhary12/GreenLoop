@@ -9,6 +9,7 @@ import { Dashboard } from './pages/citizen/Dashboard';
 import { Reports } from './pages/citizen/Reports';
 import { ReportWaste } from './pages/citizen/ReportWaste';
 import { ReportDetail } from './pages/citizen/ReportDetail';
+import { CollectorDashboard } from './pages/collector/CollectorDashboard';
 import { fetchHealth } from './services/api';
 import type { HealthResponse, HealthStatus } from './types/health';
 
@@ -77,7 +78,7 @@ export const App: React.FC = () => {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <Dashboard />
             </Layout>
@@ -87,7 +88,7 @@ export const App: React.FC = () => {
       <Route
         path="/reports"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <Reports />
             </Layout>
@@ -97,7 +98,7 @@ export const App: React.FC = () => {
       <Route
         path="/reports/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <ReportDetail />
             </Layout>
@@ -107,9 +108,19 @@ export const App: React.FC = () => {
       <Route
         path="/report-waste"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['CITIZEN']}>
             <Layout>
               <ReportWaste />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collector"
+        element={
+          <ProtectedRoute allowedRoles={['COLLECTOR']}>
+            <Layout>
+              <CollectorDashboard />
             </Layout>
           </ProtectedRoute>
         }

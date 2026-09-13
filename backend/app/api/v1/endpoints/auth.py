@@ -33,6 +33,27 @@ def register(
 
 
 @router.post(
+    "/register/collector",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register Collector Account",
+    description="Register a new waste collector account with name, email, and password.",
+)
+def register_collector(
+    payload: UserRegister,
+    db: Session = Depends(get_db),
+) -> TokenResponse:
+    """Handle new collector registration and issue JWT token."""
+    user, token = AuthService.register_collector(db=db, data=payload)
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user),
+    )
+
+
+
+@router.post(
     "/login",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,

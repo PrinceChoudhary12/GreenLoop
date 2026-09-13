@@ -40,5 +40,16 @@ class WasteReport(BaseEntity):
         nullable=False,
     )
 
+    collector_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
+
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="reports")
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], back_populates="reports")
+    collector: Mapped[Optional["User"]] = relationship(
+        "User",
+        foreign_keys=[collector_id],
+    )

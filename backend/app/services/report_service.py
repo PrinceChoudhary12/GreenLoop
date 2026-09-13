@@ -89,3 +89,118 @@ class ReportService:
             )
 
         return report
+
+    @staticmethod
+    def get_available_reports(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[WasteReport]:
+        """Fetch open submitted waste reports available for pickup."""
+        report_repo = ReportRepository(db)
+        return report_repo.get_available_reports(skip=skip, limit=limit)
+
+    @staticmethod
+    def get_collector_assigned_reports(
+        db: Session,
+        collector_id: int,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[WasteReport]:
+        """Fetch all reports claimed by or assigned to a collector."""
+        report_repo = ReportRepository(db)
+        return report_repo.get_by_collector_id(collector_id=collector_id, skip=skip, limit=limit)
+
+    @staticmethod
+    def claim_report(
+        db: Session,
+        report_id: int,
+        collector: User,
+    ) -> WasteReport:
+        """Assign an open waste report to the authenticated collector."""
+        report_repo = ReportRepository(db)
+        report = report_repo.get_by_id(report_id)
+
+        if not report:
+            raise AppException(
+                message=f"Waste report #{report_id} not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
+                error_code="REPORT_NOT_FOUND",
+            )
+
+        if report.collector_id is not None and report.collector_id != collector.id:
+            raise AppException(
+                message=f"Waste report #{report_id} has already been claimed by another collector.",
+                status_code=status.HTTP_409_CONFLICT,
+                error_code="REPORT_ALREADY_CLAIMED",
+            )
+
+        if report.status in [ReportStatus.RESOLVED, ReportStatus.REJECTED]:
+            raise AppException(
+                message=f"Cannot claim a closed report (status: {report.status.value}).",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="REPORT_ALREADY_CLOSED",
+            )
+
+        report.collector_id = collector.id
+        if report.status == ReportStatus.SUBMITTED:
+            report.status = ReportStatus.UNDER_REVIEW
+
+        updated = report_repo.update(report)
+        logger.info(f"Report #{report.id} claimed by collector {collector.id} ({collector.email})")
+        return updated
+
+    @staticmethod
+    def update_report_status(
+        db: Session,
+        report_id: int,
+        collector_id: int,
+        new_status: ReportStatus,
+    ) -> WasteReport:
+        """Update the operational status of a claimed waste report."""
+        report_repo = ReportRepository(db)
+        report = report_repo.get_by_id(report_id)
+
+        if not report:
+            raise AppException(
+                message=f"Waste report #{report_id} not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
+                error_code="REPORT_NOT_FOUND",
+            )
+
+        if report.collector_id != collector_id:
+            raise AppException(
+                message="You are not authorized to update this report. Only the assigned collector can update it.",
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code="FORBIDDEN_REPORT_UPDATE",
+            )
+
+        allowed_target_statuses = [ReportStatus.ACCEPTED, ReportStatus.RESOLVED, ReportStatus.REJECTED, ReportStatus.UNDER_REVIEW]
+        if new_status not in allowed_target_statuses:
+            raise AppException(
+                message=f"Invalid status transition to '{new_status.value}'.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="INVALID_STATUS_TRANSITION",
+            )
+
+        report.status = new_status
+        updated = report_repo.update(report)
+        logger.info(f"Report #{report.id} status updated to {new_status.value} by collector {collector_id}")
+        return updated
+
+    @staticmethod
+    def get_collector_metrics(db: Session, collector_id: int) -> dict:
+        """Aggregate collector workload metrics."""
+        report_repo = ReportRepository(db)
+        assigned = report_repo.get_by_collector_id(collector_id=collector_id, limit=500)
+        available = report_repo.get_available_reports(limit=500)
+
+        active = [r for r in assigned if r.status in [ReportStatus.UNDER_REVIEW, ReportStatus.ACCEPTED]]
+        resolved = [r for r in assigned if r.status == ReportStatus.RESOLVED]
+
+        return {
+            "available_count": len(available),
+            "assigned_count": len(assigned),
+            "active_count": len(active),
+            "resolved_count": len(resolved),
+        }

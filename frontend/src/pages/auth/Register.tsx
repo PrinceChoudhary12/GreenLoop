@@ -39,6 +39,7 @@ function validate(form: FormState): FormErrors {
 export const Register: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [role, setRole] = useState<'CITIZEN' | 'COLLECTOR'>('CITIZEN');
   const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', passwordConfirm: '' });
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -63,14 +64,25 @@ export const Register: React.FC = () => {
     setLoading(true);
     setServerError(null);
     try {
-      const { access_token, user } = await authService.register({
-        name: form.name.trim(),
-        email: form.email.trim(),
-        password: form.password,
-        password_confirm: form.passwordConfirm,
-      });
-      login(access_token, user);
-      navigate('/dashboard', { replace: true });
+      if (role === 'COLLECTOR') {
+        const { access_token, user } = await authService.registerCollector({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          password_confirm: form.passwordConfirm,
+        });
+        login(access_token, user);
+        navigate('/collector', { replace: true });
+      } else {
+        const { access_token, user } = await authService.register({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          password_confirm: form.passwordConfirm,
+        });
+        login(access_token, user);
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
@@ -100,6 +112,28 @@ export const Register: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          <div className="role-selector-group">
+            <label className="form-label">I want to join as</label>
+            <div className="role-options">
+              <button
+                type="button"
+                className={`role-option-btn ${role === 'CITIZEN' ? 'active' : ''}`}
+                onClick={() => setRole('CITIZEN')}
+              >
+                <span className="role-option-title">Citizen</span>
+                <span className="role-option-desc">Report waste & track collection</span>
+              </button>
+              <button
+                type="button"
+                className={`role-option-btn ${role === 'COLLECTOR' ? 'active' : ''}`}
+                onClick={() => setRole('COLLECTOR')}
+              >
+                <span className="role-option-title">Waste Collector</span>
+                <span className="role-option-desc">Claim & resolve pickups</span>
+              </button>
+            </div>
+          </div>
+
           <div className="form-group">
             <label htmlFor="reg-name" className="form-label">Full name</label>
             <input

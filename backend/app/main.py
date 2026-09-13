@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.app.api.v1.router import api_v1_router
@@ -31,6 +32,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     os.makedirs(upload_path, exist_ok=True)
     # Initialize base database tables if not present
     Base.metadata.create_all(bind=engine)
+
+    # Ensure schema evolution for existing local SQLite database
+    try:
+        with engine.connect() as conn:
+            cursor = conn.connection.cursor()
+            cursor.execute("PRAGMA table_info(waste_reports)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if columns and "collector_id" not in columns:
+                conn.execute(text("ALTER TABLE waste_reports ADD COLUMN collector_id INTEGER REFERENCES users(id)"))
+                conn.commit()
+                logger.info("Migrated SQLite schema: added 'collector_id' column to waste_reports.")
+    except Exception as exc:
+        logger.warning(f"Schema auto-migration notice: {exc}")
+
     logger.info("Database foundation and tables initialized successfully.")
     yield
     logger.info(f"Shutting down {settings.APP_NAME}...")
