@@ -15,6 +15,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
+import { useTheme } from '../../context/useTheme';
 import { StatusBadge } from '../common/StatusBadge';
 import { NotificationBell } from '../notifications/NotificationBell';
 import type { HealthStatus } from '../../types/health';
@@ -35,11 +36,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { setTheme, resolvedTheme } = useTheme();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('greenloop_theme') as 'light' | 'dark') || 'light';
-  });
-
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown when clicking outside
@@ -58,10 +56,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   }, [profileDropdownOpen]);
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem('greenloop_theme', nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
   };
 
   const handleLogout = () => {
@@ -177,10 +173,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           className="topbar-icon-btn topbar-theme-btn"
           onClick={toggleTheme}
-          title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}
+          title={resolvedTheme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
           aria-label="Toggle visual theme"
         >
-          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {/* User Profile Menu or Auth Actions */}

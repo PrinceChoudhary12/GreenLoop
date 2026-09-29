@@ -5,6 +5,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { TopBar } from '../components/layout/TopBar';
 import { SearchModal } from '../components/search/SearchModal';
 import { AuthContext } from '../context/useAuth';
+import { ThemeProvider } from '../context/ThemeContext';
 import type { User } from '../types/auth';
 
 const mockCitizen: User = {
@@ -34,23 +35,25 @@ describe('Platform UI 2.0 Shell & Navigation', () => {
   it('renders role-appropriate navigation for Citizen', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
-        <AuthContext.Provider
-          value={{
-            user: mockCitizen,
-            token: 'test-token',
-            isAuthenticated: true,
-            isLoading: false,
-            login: vi.fn(),
-            logout: vi.fn(),
-          }}
-        >
-          <Sidebar
-            collapsed={false}
-            onToggleCollapse={vi.fn()}
-            mobileOpen={false}
-            onCloseMobile={vi.fn()}
-          />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider
+            value={{
+              user: mockCitizen,
+              token: 'test-token',
+              isAuthenticated: true,
+              isLoading: false,
+              login: vi.fn(),
+              logout: vi.fn(),
+            }}
+          >
+            <Sidebar
+              collapsed={false}
+              onToggleCollapse={vi.fn()}
+              mobileOpen={false}
+              onCloseMobile={vi.fn()}
+            />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     );
 
@@ -66,23 +69,25 @@ describe('Platform UI 2.0 Shell & Navigation', () => {
   it('renders role-appropriate navigation for Admin', () => {
     render(
       <MemoryRouter initialEntries={['/admin']}>
-        <AuthContext.Provider
-          value={{
-            user: mockAdmin,
-            token: 'test-token',
-            isAuthenticated: true,
-            isLoading: false,
-            login: vi.fn(),
-            logout: vi.fn(),
-          }}
-        >
-          <Sidebar
-            collapsed={false}
-            onToggleCollapse={vi.fn()}
-            mobileOpen={false}
-            onCloseMobile={vi.fn()}
-          />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider
+            value={{
+              user: mockAdmin,
+              token: 'test-token',
+              isAuthenticated: true,
+              isLoading: false,
+              login: vi.fn(),
+              logout: vi.fn(),
+            }}
+          >
+            <Sidebar
+              collapsed={false}
+              onToggleCollapse={vi.fn()}
+              mobileOpen={false}
+              onCloseMobile={vi.fn()}
+            />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     );
 
@@ -96,21 +101,23 @@ describe('Platform UI 2.0 Shell & Navigation', () => {
 
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
-        <AuthContext.Provider
-          value={{
-            user: mockCitizen,
-            token: 'test-token',
-            isAuthenticated: true,
-            isLoading: false,
-            login: vi.fn(),
-            logout: logoutMock,
-          }}
-        >
-          <TopBar
-            onOpenMobileNav={vi.fn()}
-            onOpenSearch={vi.fn()}
-          />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider
+            value={{
+              user: mockCitizen,
+              token: 'test-token',
+              isAuthenticated: true,
+              isLoading: false,
+              login: vi.fn(),
+              logout: logoutMock,
+            }}
+          >
+            <TopBar
+              onOpenMobileNav={vi.fn()}
+              onOpenSearch={vi.fn()}
+            />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     );
 
@@ -129,28 +136,30 @@ describe('Platform UI 2.0 Shell & Navigation', () => {
   it('toggles theme in TopBar and persists in localStorage', () => {
     render(
       <MemoryRouter>
-        <AuthContext.Provider
-          value={{
-            user: mockCitizen,
-            token: 'test-token',
-            isAuthenticated: true,
-            isLoading: false,
-            login: vi.fn(),
-            logout: vi.fn(),
-          }}
-        >
-          <TopBar
-            onOpenMobileNav={vi.fn()}
-            onOpenSearch={vi.fn()}
-          />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider
+            value={{
+              user: mockCitizen,
+              token: 'test-token',
+              isAuthenticated: true,
+              isLoading: false,
+              login: vi.fn(),
+              logout: vi.fn(),
+            }}
+          >
+            <TopBar
+              onOpenMobileNav={vi.fn()}
+              onOpenSearch={vi.fn()}
+            />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     );
 
     const themeBtn = screen.getByRole('button', { name: /toggle visual theme/i });
     fireEvent.click(themeBtn);
 
-    expect(localStorage.getItem('greenloop_theme')).toBe('dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 
   it('renders and filters items in SearchModal', () => {
@@ -158,18 +167,20 @@ describe('Platform UI 2.0 Shell & Navigation', () => {
 
     render(
       <MemoryRouter>
-        <AuthContext.Provider
-          value={{
-            user: mockCitizen,
-            token: 'test-token',
-            isAuthenticated: true,
-            isLoading: false,
-            login: vi.fn(),
-            logout: vi.fn(),
-          }}
-        >
-          <SearchModal isOpen={true} onClose={closeMock} />
-        </AuthContext.Provider>
+        <ThemeProvider>
+          <AuthContext.Provider
+            value={{
+              user: mockCitizen,
+              token: 'test-token',
+              isAuthenticated: true,
+              isLoading: false,
+              login: vi.fn(),
+              logout: vi.fn(),
+            }}
+          >
+            <SearchModal isOpen={true} onClose={closeMock} />
+          </AuthContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     );
 

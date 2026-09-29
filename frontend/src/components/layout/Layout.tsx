@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { Footer } from './Footer';
 import { SearchModal } from '../search/SearchModal';
+import { useTheme } from '../../context/useTheme';
 import type { HealthStatus } from '../../types/health';
 
 interface LayoutProps {
@@ -11,18 +12,13 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, systemStatus }) => {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('greenloop_sidebar_collapsed') === 'true';
-  });
+  const { preferences, setSidebarMode } = useTheme();
+  const collapsed = preferences.sidebarMode === 'collapsed';
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
 
   const toggleCollapse = () => {
-    setCollapsed(prev => {
-      const next = !prev;
-      localStorage.setItem('greenloop_sidebar_collapsed', String(next));
-      return next;
-    });
+    setSidebarMode(collapsed ? 'expanded' : 'collapsed');
   };
 
   // Close mobile drawer on resize to desktop
