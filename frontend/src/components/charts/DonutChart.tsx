@@ -53,25 +53,30 @@ export const DonutChart: React.FC<DonutChartProps> = ({
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
 
-  let accumulatedOffset = 0;
-  const segments = data.map((item, index) => {
-    const val = Number.isFinite(item.value) && item.value > 0 ? item.value : 0;
-    const ratio = total > 0 ? val / total : 0;
-    const segmentLength = ratio * circumference;
-    const offset = accumulatedOffset;
-    accumulatedOffset += segmentLength;
-    const color = item.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-    const computedPct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+  const segments = React.useMemo(() => {
+    const result = [];
+    let currentOffset = 0;
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+      const val = Number.isFinite(item.value) && item.value > 0 ? item.value : 0;
+      const ratio = total > 0 ? val / total : 0;
+      const segmentLength = ratio * circumference;
+      const offset = currentOffset;
+      currentOffset += segmentLength;
+      const color = item.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+      const computedPct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
 
-    return {
-      ...item,
-      val,
-      color,
-      segmentLength,
-      offset,
-      displayPct: item.percentage !== undefined ? item.percentage.toFixed(1) : computedPct,
-    };
-  });
+      result.push({
+        ...item,
+        val,
+        color,
+        segmentLength,
+        offset,
+        displayPct: item.percentage !== undefined ? item.percentage.toFixed(1) : computedPct,
+      });
+    }
+    return result;
+  }, [data, total, circumference]);
 
   const chartTitle = title || 'Distribution Chart';
   const accessibleDescription =

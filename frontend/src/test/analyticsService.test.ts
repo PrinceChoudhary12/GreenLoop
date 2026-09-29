@@ -146,13 +146,51 @@ describe('analyticsService', () => {
     expect(data.collectors[0].name).toBe('Bob Collector');
   });
 
-  it('handles API error responses gracefully', async () => {
+  it('uses default time_range and interval parameters when omitted', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({ error: { message: 'Admin privileges required' } }),
+      ok: true,
+      json: async () => ({
+        time_range: '30d',
+        interval: 'day',
+        data_points: [],
+      }),
     });
     globalThis.fetch = fetchMock;
 
-    await expect(getAnalyticsOverview('invalid-token')).rejects.toThrow('Admin privileges required');
+    await getTrendAnalytics('test-token');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('time_range=30d');
+    expect(url).toContain('interval=day');
+  });
+
+  it('handles API error responses with detail strings and objects', async () => {
+    // 1. message property
+    let fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: 'Not authenticated' }),
+    });
+    globalThis.fetch = fetchMock;
+    await expect(getAnalyticsOverview('invalid-token')).rejects.toThrow('Not authenticated');
+
+    // 2. detail string property
+    fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ detail: 'Forbidden resource' }),
+    });
+    globalThis.fetch = fetchMock;
+    await expect(getAnalyticsOverview('invalid-token')).rejects.toThrow('Forbidden resource');
+
+    // 3. fallback error message
+    fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => {
+        throw new Error('Parse error');
+      },
+    });
+    globalThis.fetch = fetchMock;
+    await expect(getAnalyticsOverview('invalid-token')).rejects.toThrow(
+      'Failed to fetch platform analytics overview.'
+    );
   });
 });

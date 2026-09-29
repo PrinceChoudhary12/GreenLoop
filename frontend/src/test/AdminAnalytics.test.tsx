@@ -222,4 +222,117 @@ describe('AdminAnalytics', () => {
       expect(screen.getByRole('button', { name: /Retry Overview/i })).toBeInTheDocument();
     });
   });
+
+  it('handles empty analytics datasets gracefully', async () => {
+    const emptyOverview: AnalyticsOverviewResponse = {
+      time_range: '30d',
+      start_date: null,
+      end_date: '2026-09-29T00:00:00Z',
+      total_reports: 0,
+      resolved_reports: 0,
+      resolution_rate: 0.0,
+      total_pickups: 0,
+      completed_pickups: 0,
+      pickup_completion_rate: 0.0,
+      avg_resolution_turnaround_hours: 0.0,
+      active_collectors: 0,
+      active_citizens: 0,
+    };
+
+    const emptyCategories: CategoryAnalyticsResponse = {
+      time_range: '30d',
+      total_reports: 0,
+      categories: [],
+    };
+
+    const emptyTrends: TrendAnalyticsResponse = {
+      time_range: '30d',
+      interval: 'day',
+      data_points: [],
+    };
+
+    const emptyCollectors: CollectorPerformanceResponse = {
+      time_range: '30d',
+      collectors: [],
+    };
+
+    vi.spyOn(analyticsService, 'getAnalyticsOverview').mockResolvedValue(emptyOverview);
+    vi.spyOn(analyticsService, 'getCategoryAnalytics').mockResolvedValue(emptyCategories);
+    vi.spyOn(analyticsService, 'getTrendAnalytics').mockResolvedValue(emptyTrends);
+    vi.spyOn(analyticsService, 'getCollectorPerformance').mockResolvedValue(emptyCollectors);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('kpi-total-reports')).toHaveTextContent('0');
+      expect(screen.getByTestId('kpi-resolution-rate')).toHaveTextContent('0.0%');
+      expect(screen.getByText('No waste reports logged in this time window')).toBeInTheDocument();
+      expect(
+        screen.getByText('No chronological activity data logged in this range')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('No collector performance data available for this range')
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('triggers refresh across all endpoints on refresh button click', async () => {
+    const getOverviewSpy = vi
+      .spyOn(analyticsService, 'getAnalyticsOverview')
+      .mockResolvedValue(mockOverview);
+    const getCategoriesSpy = vi
+      .spyOn(analyticsService, 'getCategoryAnalytics')
+      .mockResolvedValue(mockCategories);
+    const getTrendsSpy = vi
+      .spyOn(analyticsService, 'getTrendAnalytics')
+      .mockResolvedValue(mockTrends);
+    const getCollectorsSpy = vi
+      .spyOn(analyticsService, 'getCollectorPerformance')
+      .mockResolvedValue(mockCollectors);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(getOverviewSpy).toHaveBeenCalledTimes(1);
+    });
+
+    const refreshBtn = screen.getByTestId('refresh-analytics-btn');
+    fireEvent.click(refreshBtn);
+
+    await waitFor(() => {
+      expect(getOverviewSpy).toHaveBeenCalledTimes(2);
+      expect(getCategoriesSpy).toHaveBeenCalledTimes(2);
+      expect(getTrendsSpy).toHaveBeenCalledTimes(2);
+      expect(getCollectorsSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('handles isolated category failure and recovers on retry', async () => {
+    vi.spyOn(analyticsService, 'getAnalyticsOverview').mockResolvedValue(mockOverview);
+    const getCategoriesSpy = vi
+      .spyOn(analyticsService, 'getCategoryAnalytics')
+      .mockRejectedValueOnce(new Error('Category DB Error'))
+      .mockResolvedValueOnce(mockCategories);
+    vi.spyOn(analyticsService, 'getTrendAnalytics').mockResolvedValue(mockTrends);
+    vi.spyOn(analyticsService, 'getCollectorPerformance').mockResolvedValue(mockCollectors);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Category DB Error')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Retry Categories/i })).toBeInTheDocument();
+    });
+
+    // Overview should still be visible and healthy
+    expect(screen.getByTestId('kpi-total-reports')).toHaveTextContent('120');
+
+    // Click retry
+    const retryBtn = screen.getByRole('button', { name: /Retry Categories/i });
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(getCategoriesSpy).toHaveBeenCalledTimes(2);
+      expect(screen.getAllByText('Plastic Waste').length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
