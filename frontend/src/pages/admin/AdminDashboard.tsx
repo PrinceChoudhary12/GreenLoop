@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlertCircle,
+  BarChart3,
   Calendar,
   CheckCircle2,
   ExternalLink,
@@ -326,15 +328,26 @@ export const AdminDashboard: React.FC = () => {
             Welcome, {currentUser?.name}. Monitor platform health, manage user accounts, and coordinate citywide collection operations.
           </p>
         </div>
-        <button
-          className="btn btn-secondary btn-sm refresh-btn"
-          onClick={loadAllData}
-          disabled={loading}
-          aria-label="Refresh administrator metrics"
-        >
-          <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Link
+            to="/admin/analytics"
+            className="btn btn-primary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            aria-label="View Analytics Dashboard"
+          >
+            <BarChart3 size={14} aria-hidden="true" />
+            Analytics Dashboard
+          </Link>
+          <button
+            className="btn btn-secondary btn-sm refresh-btn"
+            onClick={loadAllData}
+            disabled={loading}
+            aria-label="Refresh administrator metrics"
+          >
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </section>
 
       {/* KPI Ribbons */}

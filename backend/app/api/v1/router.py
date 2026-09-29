@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from backend.app.api.v1.endpoints import (
     activity,
     admin,
+    analytics,
     auth,
     collectors,
     health,
@@ -21,3 +22,4 @@ api_v1_router.include_router(admin.router)
 api_v1_router.include_router(pickups.router)
 api_v1_router.include_router(notifications.router)
 api_v1_router.include_router(activity.router)
+api_v1_router.include_router(analytics.router)

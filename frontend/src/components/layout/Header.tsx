@@ -54,9 +54,14 @@ export const Header: React.FC<HeaderProps> = ({ systemStatus }) => {
           {isAuthenticated ? (
             <>
               {user?.role === 'ADMIN' ? (
-                <NavLink to="/admin" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
-                  Admin Portal
-                </NavLink>
+                <>
+                  <NavLink to="/admin" end className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    Admin Portal
+                  </NavLink>
+                  <NavLink to="/admin/analytics" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
+                    Analytics
+                  </NavLink>
+                </>
               ) : user?.role === 'COLLECTOR' ? (
                 <NavLink to="/collector" className={({ isActive }) => `nav-link nav-highlight ${isActive ? 'nav-active' : ''}`} onClick={() => setMenuOpen(false)}>
                   Collector Workspace
