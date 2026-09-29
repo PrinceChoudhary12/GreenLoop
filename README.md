@@ -21,9 +21,10 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 
 ## 3. Current Version & Development Status
 
-- **Current Version**: `v0.5.0`
-- **Current Milestone**: `Milestone 05 — End-to-End Pickup Workflow & Real-Time Logistics Coordination`
+- **Current Version**: `v0.6.0`
+- **Current Milestone**: `Milestone 06 — In-App Notifications & Activity Tracking`
 - **Status**: **Completed & Verified**
+- **Next Milestone**: `Milestone 07 — Analytics & Reporting Dashboard` (Target: `v0.7.0`)
 
 ### Feature Status Matrix
 
@@ -46,8 +47,13 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 | **Scheduled Waste Pickup Requests & Duplicate Concurrency Guard** | **Implemented** | Milestone 05 |
 | **Multi-Role Pickup Logistics Lifecycle (Schedule → Assign → Accept → In Progress → Complete)** | **Implemented** | Milestone 05 |
 | **Role-Enforced Cancellation Rules & Atomic Waste Report Resolution** | **Implemented** | Milestone 05 |
-| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 06 |
-| Environmental Impact Analytics & Community Metrics | *Planned* | Milestone 07 |
+| **In-App User Notifications, Unread Counter & Mark-as-Read** | **Implemented** | Milestone 06 |
+| **Platform-Wide Audit Logging & Citizen/Collector Activity Timelines** | **Implemented** | Milestone 06 |
+| Analytics & Reporting Dashboard (KPIs, Categories, Trends & Pure SVG Charts) | *Planned* | Milestone 07 |
+| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 08 |
+| Interactive Map & Geospatial Logistics Visualizer | *Planned* | Milestone 09 |
+| Gamification, Eco-Points & Citizen Rewards | *Planned* | Milestone 10 |
+| Production Hardening, PostgreSQL, Docker & Master Release v1.0.0 | *Planned* | Milestone 11 |
 
 ---
 
