@@ -1,0 +1,123 @@
+/* ==========================================================================
+   GreenLoop Platform UI 2.0 — Map Page Styles
+   ========================================================================== */
+
+.map-page-container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.map-hero-card {
+  background: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-8, 32px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+.map-icon-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full, 9999px);
+  background: linear-gradient(135deg, var(--color-brand-primary, #2d6a4f) 0%, var(--color-brand-light, #40916c) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4, 16px) auto;
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25);
+}
+
+.map-page-title {
+  font-size: var(--font-size-2xl, 1.5rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brand-dark, #1b4332);
+  margin: 0 0 6px 0;
+}
+
+.map-page-subtitle {
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-secondary, #475569);
+  max-width: 540px;
+  margin: 0 auto var(--space-6, 24px) auto;
+}
+
+.map-consent-card {
+  background: var(--color-surface-bg, #f8faf9);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: var(--space-4, 16px) var(--space-6, 24px);
+  text-align: left;
+  margin-bottom: var(--space-6, 24px);
+}
+
+.consent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4, 16px);
+  flex-wrap: wrap;
+}
+
+.shield-icon {
+  color: var(--color-brand-primary, #2d6a4f);
+  flex-shrink: 0;
+}
+
+.consent-text {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.consent-text strong {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-primary, #1e293b);
+}
+
+.consent-text span {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-secondary, #475569);
+}
+
+.map-architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4, 16px);
+  text-align: left;
+  margin-bottom: var(--space-6, 24px);
+}
+
+.arch-card {
+  background: var(--color-surface-bg, #f8faf9);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: var(--space-4, 16px);
+}
+
+.arch-card h3 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-brand-dark, #1b4332);
+}
+
+.arch-card p {
+  margin: 0;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-secondary, #475569);
+  line-height: 1.4;
+}
+
+.map-status-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-muted, #64748b);
+  border-top: 1px solid var(--color-border-subtle, #e2e8f0);
+  padding-top: var(--space-4, 16px);
+}

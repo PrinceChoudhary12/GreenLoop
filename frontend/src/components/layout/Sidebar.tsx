@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Award,
   MapPin,
-  Building2,
   Settings,
   HelpCircle,
   ChevronLeft,
@@ -82,14 +81,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       coreItems.push(
         { label: 'Command Center', to: '/admin', icon: ShieldCheck, end: true },
         { label: 'Analytics Studio', to: '/admin/analytics', icon: BarChart3, highlight: true },
-        { label: 'All Reports', to: '/reports', icon: FileText },
-        { label: 'Pickups Fleet', to: '/pickups', icon: Truck },
       );
     } else if (role === 'COLLECTOR') {
       coreItems.push(
-        { label: 'Collector Ops', to: '/collector', icon: LayoutDashboard, end: true },
-        { label: 'Pickups Queue', to: '/pickups', icon: Truck, highlight: true },
-        { label: 'Nearby Reports', to: '/reports', icon: FileText },
+        { label: 'Collector Workspace', to: '/collector', icon: LayoutDashboard, end: true },
       );
     } else {
       // CITIZEN or unauthenticated fallback
@@ -103,7 +98,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const platformItems: NavItemConfig[] = [
       { label: 'Live Map', to: '/map', icon: MapPin },
-      { label: 'Recycling Centers', to: '/centers', icon: Building2 },
       {
         label: 'Notifications',
         to: '/notifications',

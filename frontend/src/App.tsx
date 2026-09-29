@@ -14,6 +14,12 @@ import { CollectorDashboard } from './pages/collector/CollectorDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { ActivityPage } from './pages/activity/ActivityPage';
+import { MessagesPage } from './pages/messages/MessagesPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
+import { HelpPage } from './pages/help/HelpPage';
+import { MapPage } from './pages/map/MapPage';
+import { RewardsPage } from './pages/rewards/RewardsPage';
 import { fetchHealth } from './services/api';
 import type { HealthResponse, HealthStatus } from './types/health';
 
@@ -83,7 +89,7 @@ export const App: React.FC = () => {
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <Dashboard />
             </Layout>
           </ProtectedRoute>
@@ -93,7 +99,7 @@ export const App: React.FC = () => {
         path="/reports"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <Reports />
             </Layout>
           </ProtectedRoute>
@@ -103,7 +109,7 @@ export const App: React.FC = () => {
         path="/reports/:id"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <ReportDetail />
             </Layout>
           </ProtectedRoute>
@@ -113,7 +119,7 @@ export const App: React.FC = () => {
         path="/pickups"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <Pickups />
             </Layout>
           </ProtectedRoute>
@@ -123,7 +129,7 @@ export const App: React.FC = () => {
         path="/report-waste"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <ReportWaste />
             </Layout>
           </ProtectedRoute>
@@ -133,7 +139,7 @@ export const App: React.FC = () => {
         path="/collector"
         element={
           <ProtectedRoute allowedRoles={['COLLECTOR']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <CollectorDashboard />
             </Layout>
           </ProtectedRoute>
@@ -143,7 +149,7 @@ export const App: React.FC = () => {
         path="/admin"
         element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <AdminDashboard />
             </Layout>
           </ProtectedRoute>
@@ -153,7 +159,7 @@ export const App: React.FC = () => {
         path="/admin/analytics"
         element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <AdminAnalytics />
             </Layout>
           </ProtectedRoute>
@@ -163,10 +169,68 @@ export const App: React.FC = () => {
         path="/notifications"
         element={
           <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
-            <Layout>
+            <Layout systemStatus={systemStatus}>
               <NotificationsPage />
             </Layout>
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <ActivityPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <MessagesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <SettingsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/map"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <MapPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rewards"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <RewardsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/help"
+        element={
+          <Layout systemStatus={systemStatus}>
+            <HelpPage />
+          </Layout>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
