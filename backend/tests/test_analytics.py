@@ -163,7 +163,7 @@ def test_time_boundary_helper():
 
 
 # ==============================================================================
-# API ENDPOINT TESTS (M07.2)
+# API OVERVIEW ENDPOINT TESTS (M07.2)
 # ==============================================================================
 
 def test_admin_can_get_analytics_overview(client: TestClient, db_session: Session):
@@ -235,3 +235,147 @@ def test_analytics_overview_collector_forbidden(client: TestClient, db_session: 
 
     response = client.get("/api/v1/analytics/overview", headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+# ==============================================================================
+# API CATEGORY & TREND ENDPOINT TESTS (M07.3)
+# ==============================================================================
+
+def test_admin_can_get_analytics_categories(client: TestClient, db_session: Session):
+    """Admin successfully fetches category analytics breakdown."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_cat")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.get("/api/v1/analytics/categories", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert "total_reports" in data
+    assert "categories" in data
+    assert len(data["categories"]) == len(WasteCategory)
+
+    for cat_item in data["categories"]:
+        assert "category" in cat_item
+        assert "label" in cat_item
+        assert "report_count" in cat_item
+        assert "percentage" in cat_item
+        assert "resolved_count" in cat_item
+        assert "resolution_rate" in cat_item
+
+
+def test_analytics_categories_time_range_filters(client: TestClient, db_session: Session):
+    """Category breakdown responds accurately across time range filters."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_cat_range")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    for range_val in ["7d", "30d", "90d", "all"]:
+        response = client.get(f"/api/v1/analytics/categories?time_range={range_val}", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["time_range"] == range_val
+
+
+def test_analytics_categories_invalid_time_range_rejected(client: TestClient, db_session: Session):
+    """Invalid time range filter on categories endpoint returns 422."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_cat_inv")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.get("/api/v1/analytics/categories?time_range=bad_range", headers=headers)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_analytics_categories_rbac_enforcement(client: TestClient, db_session: Session):
+    """Verify citizen, collector, and unauthenticated requests are rejected on categories endpoint."""
+    _, citizen_token = _create_user(db_session, UserRole.CITIZEN, "cit_cat_rbac")
+    _, collector_token = _create_user(db_session, UserRole.COLLECTOR, "col_cat_rbac")
+
+    # Unauthenticated
+    assert client.get("/api/v1/analytics/categories").status_code == status.HTTP_401_UNAUTHORIZED
+    # Citizen
+    assert client.get(
+        "/api/v1/analytics/categories",
+        headers={"Authorization": f"Bearer {citizen_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN
+    # Collector
+    assert client.get(
+        "/api/v1/analytics/categories",
+        headers={"Authorization": f"Bearer {collector_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_admin_can_get_analytics_trends(client: TestClient, db_session: Session):
+    """Admin successfully fetches time-series trends with chronological ordering."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_trend")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.get("/api/v1/analytics/trends?interval=day&time_range=30d", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["interval"] == "day"
+    assert data["time_range"] == "30d"
+    assert "data_points" in data
+    assert len(data["data_points"]) > 0
+
+    # Verify chronological ordering
+    timestamps = [dp["timestamp"] for dp in data["data_points"]]
+    assert timestamps == sorted(timestamps)
+
+    for dp in data["data_points"]:
+        assert "timestamp" in dp
+        assert "label" in dp
+        assert "submitted_reports" in dp
+        assert "resolved_reports" in dp
+        assert "requested_pickups" in dp
+        assert "completed_pickups" in dp
+
+
+def test_analytics_trends_intervals_and_time_ranges(client: TestClient, db_session: Session):
+    """Trend endpoint supports all combinations of intervals and time ranges."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_trend_combos")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    for interval in ["day", "week", "month"]:
+        for range_val in ["7d", "30d", "90d", "all"]:
+            response = client.get(
+                f"/api/v1/analytics/trends?interval={interval}&time_range={range_val}",
+                headers=headers,
+            )
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert data["interval"] == interval
+            assert data["time_range"] == range_val
+            assert isinstance(data["data_points"], list)
+
+
+def test_analytics_trends_invalid_parameters_rejected(client: TestClient, db_session: Session):
+    """Invalid interval or time range parameters return 422."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_trend_inv")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Invalid interval
+    res1 = client.get("/api/v1/analytics/trends?interval=hourly", headers=headers)
+    assert res1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Invalid time_range
+    res2 = client.get("/api/v1/analytics/trends?time_range=1year", headers=headers)
+    assert res2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_analytics_trends_rbac_enforcement(client: TestClient, db_session: Session):
+    """Verify citizen, collector, and unauthenticated requests are rejected on trends endpoint."""
+    _, citizen_token = _create_user(db_session, UserRole.CITIZEN, "cit_tr_rbac")
+    _, collector_token = _create_user(db_session, UserRole.COLLECTOR, "col_tr_rbac")
+
+    # Unauthenticated
+    assert client.get("/api/v1/analytics/trends").status_code == status.HTTP_401_UNAUTHORIZED
+    # Citizen
+    assert client.get(
+        "/api/v1/analytics/trends",
+        headers={"Authorization": f"Bearer {citizen_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN
+    # Collector
+    assert client.get(
+        "/api/v1/analytics/trends",
+        headers={"Authorization": f"Bearer {collector_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN

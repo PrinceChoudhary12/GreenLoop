@@ -25,6 +25,15 @@ CATEGORY_LABELS: Dict[WasteCategory, str] = {
 }
 
 
+def _ensure_utc(dt: Optional[datetime.datetime]) -> Optional[datetime.datetime]:
+    """Helper to ensure a datetime is offset-aware UTC."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt.astimezone(datetime.timezone.utc)
+
+
 class AnalyticsRepository:
     """Data-access repository for platform analytics and operational reporting."""
 
@@ -66,10 +75,13 @@ class AnalyticsRepository:
         turnaround_hours: List[float] = []
         for r in reports:
             if r.status == ReportStatus.RESOLVED and r.created_at and r.updated_at:
-                delta = r.updated_at - r.created_at
-                hours = delta.total_seconds() / 3600.0
-                if hours >= 0:
-                    turnaround_hours.append(hours)
+                c_dt = _ensure_utc(r.created_at)
+                u_dt = _ensure_utc(r.updated_at)
+                if c_dt and u_dt:
+                    delta = u_dt - c_dt
+                    hours = delta.total_seconds() / 3600.0
+                    if hours >= 0:
+                        turnaround_hours.append(hours)
 
         avg_turnaround = (
             round(sum(turnaround_hours) / len(turnaround_hours), 2)
@@ -167,14 +179,40 @@ class AnalyticsRepository:
     ) -> List[Dict[str, Any]]:
         """Generate time-series buckets with submitted/resolved reports and requested/completed pickups."""
         now = datetime.datetime.now(datetime.timezone.utc)
-        effective_start = start_date or (now - datetime.timedelta(days=30))
+
+        if start_date:
+            effective_start = _ensure_utc(start_date)
+        else:
+            min_report_dt = _ensure_utc(self.db.scalar(select(func.min(WasteReport.created_at))))
+            min_pickup_dt = _ensure_utc(self.db.scalar(select(func.min(Pickup.created_at))))
+            candidates = [dt for dt in [min_report_dt, min_pickup_dt] if dt is not None]
+            if candidates:
+                effective_start = min(candidates)
+            else:
+                effective_start = now - datetime.timedelta(days=30)
+
+        assert effective_start is not None
+
+        # Align effective_start to boundary
+        if interval == TrendIntervalEnum.DAY:
+            effective_start = effective_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif interval == TrendIntervalEnum.WEEK:
+            effective_start = (effective_start - datetime.timedelta(days=effective_start.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        else:  # MONTH
+            effective_start = effective_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # Query all relevant reports in range
-        rep_query = select(WasteReport).where(WasteReport.created_at >= effective_start)
+        rep_query = select(WasteReport)
+        if start_date:
+            rep_query = rep_query.where(WasteReport.created_at >= effective_start)
         reports = list(self.db.scalars(rep_query).all())
 
         # Query all relevant pickups in range
-        pick_query = select(Pickup).where(Pickup.created_at >= effective_start)
+        pick_query = select(Pickup)
+        if start_date:
+            pick_query = pick_query.where(Pickup.created_at >= effective_start)
         pickups = list(self.db.scalars(pick_query).all())
 
         # Determine bucketing interval
@@ -199,7 +237,9 @@ class AnalyticsRepository:
         # Generate timeline grid
         buckets: Dict[tuple, Dict[str, Any]] = {}
         curr = effective_start
-        step = datetime.timedelta(days=1 if interval == TrendIntervalEnum.DAY else 7 if interval == TrendIntervalEnum.WEEK else 30)
+        step = datetime.timedelta(
+            days=1 if interval == TrendIntervalEnum.DAY else 7 if interval == TrendIntervalEnum.WEEK else 30
+        )
 
         while curr <= now + datetime.timedelta(hours=1):
             key = bucket_key(curr)
@@ -217,25 +257,32 @@ class AnalyticsRepository:
         # Accumulate reports
         for r in reports:
             if r.created_at:
-                key = bucket_key(r.created_at)
-                if key in buckets:
-                    buckets[key]["submitted_reports"] += 1
+                c_dt = _ensure_utc(r.created_at)
+                if c_dt:
+                    key = bucket_key(c_dt)
+                    if key in buckets:
+                        buckets[key]["submitted_reports"] += 1
             if r.status == ReportStatus.RESOLVED and r.updated_at:
-                key = bucket_key(r.updated_at)
-                if key in buckets:
-                    buckets[key]["resolved_reports"] += 1
+                u_dt = _ensure_utc(r.updated_at)
+                if u_dt:
+                    key = bucket_key(u_dt)
+                    if key in buckets:
+                        buckets[key]["resolved_reports"] += 1
 
         # Accumulate pickups
         for p in pickups:
             if p.created_at:
-                key = bucket_key(p.created_at)
-                if key in buckets:
-                    buckets[key]["requested_pickups"] += 1
+                c_dt = _ensure_utc(p.created_at)
+                if c_dt:
+                    key = bucket_key(c_dt)
+                    if key in buckets:
+                        buckets[key]["requested_pickups"] += 1
             if p.status == PickupStatus.COMPLETED and (p.completed_at or p.updated_at):
-                comp_dt = p.completed_at or p.updated_at
-                key = bucket_key(comp_dt)
-                if key in buckets:
-                    buckets[key]["completed_pickups"] += 1
+                comp_dt = _ensure_utc(p.completed_at or p.updated_at)
+                if comp_dt:
+                    key = bucket_key(comp_dt)
+                    if key in buckets:
+                        buckets[key]["completed_pickups"] += 1
 
         # Format sorted list
         sorted_buckets = sorted(buckets.values(), key=lambda b: b["timestamp"])
