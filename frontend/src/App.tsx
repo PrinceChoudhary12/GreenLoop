@@ -12,6 +12,7 @@ import { ReportWaste } from './pages/citizen/ReportWaste';
 import { ReportDetail } from './pages/citizen/ReportDetail';
 import { CollectorDashboard } from './pages/collector/CollectorDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { fetchHealth } from './services/api';
 import type { HealthResponse, HealthStatus } from './types/health';
@@ -144,6 +145,16 @@ export const App: React.FC = () => {
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <Layout>
               <AdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Layout>
+              <AdminAnalytics />
             </Layout>
           </ProtectedRoute>
         }

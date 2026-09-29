@@ -1,0 +1,270 @@
+/* Admin Analytics Dashboard Styling */
+
+.analytics-dashboard-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Page Header & Filter Controls */
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  background: var(--color-surface-card);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-subtle);
+}
+
+.analytics-header-title h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-1) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.analytics-header-title p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.analytics-header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-btn:hover {
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.filter-btn.active {
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-subtle);
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.refresh-btn:hover {
+  border-color: var(--color-brand-primary);
+  color: var(--color-brand-primary);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* KPI Metric Cards Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+/* Analytics Content Grid Sections */
+.analytics-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: var(--space-6);
+}
+
+@media (max-width: 960px) {
+  .analytics-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analytics-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.analytics-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.analytics-card-header h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.analytics-card-header p {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Collector Performance Table */
+.collector-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.collector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+  text-align: left;
+}
+
+.collector-table th {
+  background: var(--color-surface-bg);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  white-space: nowrap;
+}
+
+.collector-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.collector-table tr:last-child td {
+  border-bottom: none;
+}
+
+.collector-table tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* Category Metric Table */
+.category-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-3);
+}
+
+.category-summary-table th {
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.category-summary-table td {
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-primary);
+}
+
+.category-summary-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Error State in Section */
+.section-error-card {
+  padding: var(--space-6);
+  text-align: center;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  color: var(--color-error-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-retry-btn {
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  margin-top: var(--space-2);
+  transition: opacity var(--transition-fast);
+}
+
+.section-retry-btn:hover {
+  opacity: 0.9;
+}
