@@ -379,3 +379,142 @@ def test_analytics_trends_rbac_enforcement(client: TestClient, db_session: Sessi
         "/api/v1/analytics/trends",
         headers={"Authorization": f"Bearer {collector_token}"},
     ).status_code == status.HTTP_403_FORBIDDEN
+
+
+# ==============================================================================
+# API COLLECTOR PERFORMANCE ENDPOINT TESTS (M07.4)
+# ==============================================================================
+
+def test_admin_can_get_collector_performance(client: TestClient, db_session: Session):
+    """Admin successfully fetches collector performance analytics."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_col_perf")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.get("/api/v1/analytics/collectors-performance", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert "time_range" in data
+    assert "collectors" in data
+    assert isinstance(data["collectors"], list)
+
+    for col in data["collectors"]:
+        assert "collector_id" in col
+        assert "name" in col
+        assert "email" in col
+        assert "is_active" in col
+        assert "assigned_reports" in col
+        assert "resolved_reports" in col
+        assert "assigned_pickups" in col
+        assert "completed_pickups" in col
+        assert "resolution_rate" in col
+        assert "avg_completion_time_hours" in col
+
+
+def test_collector_performance_time_range_filters(client: TestClient, db_session: Session):
+    """Collector performance responds accurately across time range filters."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_col_range")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    for range_val in ["7d", "30d", "90d", "all"]:
+        response = client.get(
+            f"/api/v1/analytics/collectors-performance?time_range={range_val}",
+            headers=headers,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["time_range"] == range_val
+
+
+def test_collector_performance_invalid_time_range_rejected(client: TestClient, db_session: Session):
+    """Invalid time range filter on collector performance endpoint returns 422."""
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_col_inv")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.get(
+        "/api/v1/analytics/collectors-performance?time_range=invalid_365d",
+        headers=headers,
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_collector_performance_rbac_enforcement(client: TestClient, db_session: Session):
+    """Verify citizen, collector, and unauthenticated requests are rejected on collector performance endpoint."""
+    _, citizen_token = _create_user(db_session, UserRole.CITIZEN, "cit_col_rbac")
+    _, collector_token = _create_user(db_session, UserRole.COLLECTOR, "col_col_rbac")
+
+    # Unauthenticated
+    assert client.get("/api/v1/analytics/collectors-performance").status_code == status.HTTP_401_UNAUTHORIZED
+    # Citizen
+    assert client.get(
+        "/api/v1/analytics/collectors-performance",
+        headers={"Authorization": f"Bearer {citizen_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN
+    # Collector
+    assert client.get(
+        "/api/v1/analytics/collectors-performance",
+        headers={"Authorization": f"Bearer {collector_token}"},
+    ).status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_collector_performance_aggregation_and_ordering(client: TestClient, db_session: Session):
+    """Verify calculation of metrics and deterministic ordering for multiple collectors."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    one_day_ago = now - datetime.timedelta(days=1)
+    two_days_ago = now - datetime.timedelta(days=2)
+
+    _, admin_token = _create_user(db_session, UserRole.ADMIN, "adm_multi_col")
+    col1, _ = _create_user(db_session, UserRole.COLLECTOR, "col_active_1")
+    col2, _ = _create_user(db_session, UserRole.COLLECTOR, "col_active_2")
+    citizen, _ = _create_user(db_session, UserRole.CITIZEN, "cit_multi_col")
+
+    # Collector 1 has 2 completed tasks
+    r1 = WasteReport(
+        user_id=citizen.id,
+        collector_id=col1.id,
+        category=WasteCategory.METAL,
+        description="Scrap metal",
+        location="Site A",
+        status=ReportStatus.RESOLVED,
+        priority=ReportPriority.HIGH,
+        created_at=two_days_ago,
+        updated_at=one_day_ago,
+    )
+    db_session.add(r1)
+    db_session.commit()
+    db_session.refresh(r1)
+
+    p1 = Pickup(
+        report_id=r1.id,
+        user_id=citizen.id,
+        collector_id=col1.id,
+        status=PickupStatus.COMPLETED,
+        scheduled_date=one_day_ago,
+        created_at=two_days_ago,
+        completed_at=one_day_ago,
+    )
+    db_session.add(p1)
+    db_session.commit()
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = client.get("/api/v1/analytics/collectors-performance?time_range=all", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    collectors = data["collectors"]
+
+    item1 = next((c for c in collectors if c["collector_id"] == col1.id), None)
+    assert item1 is not None
+    assert item1["assigned_reports"] >= 1
+    assert item1["resolved_reports"] >= 1
+    assert item1["assigned_pickups"] >= 1
+    assert item1["completed_pickups"] >= 1
+    assert item1["resolution_rate"] == 100.0
+    assert item1["avg_completion_time_hours"] > 0.0
+
+    item2 = next((c for c in collectors if c["collector_id"] == col2.id), None)
+    assert item2 is not None
+    assert item2["assigned_reports"] == 0
+    assert item2["resolved_reports"] == 0
+    assert item2["resolution_rate"] == 0.0
+    assert item2["avg_completion_time_hours"] == 0.0

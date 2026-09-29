@@ -9,6 +9,7 @@ from backend.app.models.user import User
 from backend.app.schemas.analytics import (
     AnalyticsOverviewResponse,
     CategoryAnalyticsResponse,
+    CollectorPerformanceResponse,
     TimeRangeEnum,
     TrendAnalyticsResponse,
     TrendIntervalEnum,
@@ -81,3 +82,22 @@ def get_analytics_trends(
         interval=interval,
         time_range=time_range,
     )
+
+
+@router.get(
+    "/collectors-performance",
+    response_model=CollectorPerformanceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Collector Operational Performance Analytics",
+    description="Retrieve operational rankings, task completion rates, and turnaround metrics for all collectors. Admin only.",
+)
+def get_collector_performance(
+    time_range: TimeRangeEnum = Query(
+        default=TimeRangeEnum.LAST_30_DAYS,
+        description="Time filter window (7d, 30d, 90d, all)",
+    ),
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db),
+) -> CollectorPerformanceResponse:
+    """Return collector performance analytics for administrator inspection."""
+    return AnalyticsService.get_collector_performance(db=db, time_range=time_range)

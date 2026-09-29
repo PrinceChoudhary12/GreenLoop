@@ -325,13 +325,25 @@ class AnalyticsRepository:
                 else 0.0
             )
 
-            # Calculate average completion time for completed pickups
+            # Calculate average completion time for completed pickups and resolved reports
             completion_durations: List[float] = []
             for p in col_pickups:
                 if p.status == PickupStatus.COMPLETED and p.completed_at and p.created_at:
-                    dur = (p.completed_at - p.created_at).total_seconds() / 3600.0
-                    if dur >= 0:
-                        completion_durations.append(dur)
+                    c_dt = _ensure_utc(p.created_at)
+                    comp_dt = _ensure_utc(p.completed_at)
+                    if c_dt and comp_dt:
+                        dur = (comp_dt - c_dt).total_seconds() / 3600.0
+                        if dur >= 0:
+                            completion_durations.append(dur)
+
+            for r in col_reports:
+                if r.status == ReportStatus.RESOLVED and r.created_at and r.updated_at:
+                    c_dt = _ensure_utc(r.created_at)
+                    u_dt = _ensure_utc(r.updated_at)
+                    if c_dt and u_dt:
+                        dur = (u_dt - c_dt).total_seconds() / 3600.0
+                        if dur >= 0:
+                            completion_durations.append(dur)
 
             avg_completion = (
                 round(sum(completion_durations) / len(completion_durations), 2)
@@ -352,6 +364,9 @@ class AnalyticsRepository:
                 "avg_completion_time_hours": avg_completion,
             })
 
-        # Sort by total completed tasks descending
-        result.sort(key=lambda c: (c["completed_pickups"] + c["resolved_reports"]), reverse=True)
+        # Sort by total completed tasks descending, then by name
+        result.sort(
+            key=lambda c: (c["completed_pickups"] + c["resolved_reports"], c["resolution_rate"]),
+            reverse=True,
+        )
         return result

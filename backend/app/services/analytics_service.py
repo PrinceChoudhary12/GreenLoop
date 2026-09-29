@@ -8,6 +8,8 @@ from backend.app.schemas.analytics import (
     AnalyticsOverviewResponse,
     CategoryAnalyticsResponse,
     CategoryMetricItem,
+    CollectorPerformanceItem,
+    CollectorPerformanceResponse,
     TimeRangeEnum,
     TrendAnalyticsResponse,
     TrendDataPoint,
@@ -80,4 +82,19 @@ class AnalyticsService:
             time_range=time_range,
             interval=interval,
             data_points=[TrendDataPoint.model_validate(dp) for dp in data_points],
+        )
+
+    @staticmethod
+    def get_collector_performance(
+        db: Session,
+        time_range: TimeRangeEnum = TimeRangeEnum.LAST_30_DAYS,
+    ) -> CollectorPerformanceResponse:
+        """Fetch operational performance statistics for all registered collectors."""
+        repo = AnalyticsRepository(db)
+        start_date = repo.get_time_boundary(time_range)
+        collectors = repo.get_collector_performance(start_date=start_date)
+
+        return CollectorPerformanceResponse(
+            time_range=time_range,
+            collectors=[CollectorPerformanceItem.model_validate(c) for c in collectors],
         )
