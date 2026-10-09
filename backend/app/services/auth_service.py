@@ -14,7 +14,7 @@ from backend.app.core.security import (
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 from backend.app.repositories.user_repository import UserRepository
-from backend.app.schemas.user import UserLogin, UserRegister
+from backend.app.schemas.user import UserLogin, UserRegister, UserProfileUpdate, UserPasswordChange
 
 logger = get_logger(__name__)
 
@@ -97,3 +97,28 @@ class AuthService:
         logger.info(f"User authenticated successfully: User ID {user.id}")
         token = create_access_token(subject=user.id, role=user.role.value)
         return user, token
+
+    @staticmethod
+    def update_profile(db: Session, user: User, data: "UserProfileUpdate") -> User:
+        """Update mutable profile fields for the authenticated user."""
+        user_repo = UserRepository(db)
+        user.name = data.name
+        updated = user_repo.update(user)
+        logger.info(f"Profile updated successfully for User ID {user.id}")
+        return updated
+
+    @staticmethod
+    def change_password(db: Session, user: User, data: "UserPasswordChange") -> None:
+        """Change user password after verifying current credentials."""
+        user_repo = UserRepository(db)
+        if not verify_password(data.current_password, user.password_hash):
+            logger.warning(f"Password change failed: Incorrect current password for User ID {user.id}.")
+            raise AppException(
+                message="Incorrect current password.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="INVALID_CURRENT_PASSWORD",
+            )
+
+        user.password_hash = get_password_hash(data.new_password)
+        user_repo.update(user)
+        logger.info(f"Password changed successfully for User ID {user.id}")

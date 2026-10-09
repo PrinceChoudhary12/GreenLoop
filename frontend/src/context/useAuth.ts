@@ -4,6 +4,8 @@ import type { AuthState, User } from '../types/auth';
 export interface AuthContextValue extends AuthState {
   login: (token: string, user: User) => void;
   logout: () => void;
+  /** Update the authenticated user in context (e.g. after profile edit). */
+  updateUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

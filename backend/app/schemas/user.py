@@ -52,6 +52,41 @@ class UserLogin(BaseModel):
         return v.strip().lower()
 
 
+class UserProfileUpdate(BaseModel):
+    """Profile update payload."""
+
+    name: str = Field(..., min_length=2, max_length=100, description="Full name")
+
+    @field_validator("name")
+    @classmethod
+    def sanitize_name(cls, v: str) -> str:
+        name = v.strip()
+        if not name:
+            raise ValueError("Name cannot be empty or whitespace only")
+        return name
+
+
+class UserPasswordChange(BaseModel):
+    """Password change payload."""
+
+    current_password: str = Field(..., description="Current password")
+    new_password: str = Field(..., min_length=8, max_length=128, description="New password (min 8 characters)")
+    new_password_confirm: str = Field(..., min_length=8, max_length=128, description="New password confirmation")
+
+    @field_validator("new_password_confirm")
+    @classmethod
+    def passwords_match(cls, v: str, info) -> str:
+        if "new_password" in info.data and v != info.data["new_password"]:
+            raise ValueError("New passwords do not match")
+        return v
+
+
+class MessageResponse(BaseModel):
+    """Standard message response."""
+
+    message: str
+
+
 class UserResponse(BaseModel):
     """Public user profile response."""
 

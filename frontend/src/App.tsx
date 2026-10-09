@@ -17,6 +17,7 @@ import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { MessagesPage } from './pages/messages/MessagesPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import { ProfilePage } from './pages/profile/ProfilePage';
 import { HelpPage } from './pages/help/HelpPage';
 import { MapPage } from './pages/map/MapPage';
 import { RewardsPage } from './pages/rewards/RewardsPage';
@@ -231,6 +232,16 @@ export const App: React.FC = () => {
           <Layout systemStatus={systemStatus}>
             <HelpPage />
           </Layout>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <ProfilePage />
+            </Layout>
+          </ProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

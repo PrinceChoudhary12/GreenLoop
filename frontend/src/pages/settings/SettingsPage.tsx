@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Palette,
@@ -20,9 +21,15 @@ import {
   Flame,
   Contrast,
   CheckCircle,
+  AlertCircle,
+  Loader2,
+  Edit3,
+  X as XIcon,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { useTheme, type ThemeId, type WallpaperId } from '../../context/useTheme';
+import { authService } from '../../services/authService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import './SettingsPage.css';
 
@@ -111,7 +118,8 @@ const WALLPAPER_OPTIONS: WallpaperOption[] = [
 ];
 
 export const SettingsPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
   const {
     preferences,
     setTheme,
@@ -130,10 +138,43 @@ export const SettingsPage: React.FC = () => {
     return localStorage.getItem('greenloop_location_consent') === 'true';
   });
 
+  // ── Account profile edit state ──
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(user?.name ?? '');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameSuccess, setNameSuccess] = useState(false);
+
   const handleLocationToggle = (checked: boolean) => {
     setLocationSharing(checked);
     localStorage.setItem('greenloop_location_consent', String(checked));
   };
+
+  const handleEditNameStart = () => {
+    setNameInput(user?.name ?? '');
+    setNameError(null);
+    setNameSuccess(false);
+    setEditingName(true);
+  };
+  const handleEditNameCancel = () => { setEditingName(false); setNameError(null); };
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed.length < 2) { setNameError('Name must be at least 2 characters.'); return; }
+    if (trimmed.length > 100) { setNameError('Name must be 100 characters or less.'); return; }
+    setNameSaving(true); setNameError(null);
+    try {
+      const updated = await authService.updateProfile(token!, { name: trimmed });
+      updateUser(updated);
+      setEditingName(false);
+      setNameSuccess(true);
+      setTimeout(() => setNameSuccess(false), 3000);
+    } catch (ex: any) {
+      setNameError(ex.message || 'Profile update failed.');
+    } finally {
+      setNameSaving(false);
+    }
+  };
+
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
@@ -388,8 +429,25 @@ export const SettingsPage: React.FC = () => {
           {/* TAB 2: Account Profile */}
           {activeTab === 'account' && (
             <div className="settings-section">
-              <h2 className="section-title">Account Profile</h2>
-              <p className="section-desc">Your verified account information and platform permissions.</p>
+              <div className="section-header-wrap">
+                <div>
+                  <h2 className="section-title">Account Profile</h2>
+                  <p className="section-desc">Your verified account information and platform permissions.</p>
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => navigate('/profile')}
+                >
+                  <ExternalLink size={14} /> Full Profile
+                </button>
+              </div>
+
+              {/* Name-save success toast */}
+              {nameSuccess && (
+                <div className="settings-inline-success">
+                  <CheckCircle size={14} /> Name updated successfully.
+                </div>
+              )}
 
               <div className="settings-card">
                 <div className="profile-hero">
@@ -405,9 +463,52 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 <div className="profile-fields-grid">
+                  {/* Editable name */}
                   <div className="field-group">
-                    <label className="field-label">Full Name</label>
-                    <div className="field-value">{user?.name}</div>
+                    <label className="field-label" htmlFor="settings-profile-name">Full Name</label>
+                    {editingName ? (
+                      <div className="settings-edit-name-row">
+                        <input
+                          id="settings-profile-name"
+                          type="text"
+                          className="form-input"
+                          value={nameInput}
+                          onChange={e => { setNameInput(e.target.value); setNameError(null); }}
+                          maxLength={100}
+                          disabled={nameSaving}
+                          autoFocus
+                        />
+                        {nameError && (
+                          <span className="settings-field-error">
+                            <AlertCircle size={13} /> {nameError}
+                          </span>
+                        )}
+                        <div className="settings-edit-actions">
+                          <button
+                            id="settings-save-name-btn"
+                            className="btn btn-primary btn-sm"
+                            onClick={handleSaveName}
+                            disabled={nameSaving}
+                          >
+                            {nameSaving ? <><Loader2 size={14} className="spin" /> Saving…</> : <><CheckCircle size={14} /> Save</>}
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={handleEditNameCancel}
+                            disabled={nameSaving}
+                          >
+                            <XIcon size={14} /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="field-value-with-action">
+                        <div className="field-value">{user?.name}</div>
+                        <button className="btn btn-ghost btn-xs" onClick={handleEditNameStart}>
+                          <Edit3 size={13} /> Edit
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="field-group">
