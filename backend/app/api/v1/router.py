@@ -13,6 +13,7 @@ from backend.app.api.v1.endpoints import (
     notifications,
     pickups,
     reports,
+    search,
 )
 
 api_v1_router = APIRouter()
@@ -27,3 +28,5 @@ api_v1_router.include_router(activity.router)
 api_v1_router.include_router(analytics.router)
 api_v1_router.include_router(messaging.router)
 api_v1_router.include_router(location.router)
+api_v1_router.include_router(search.router, prefix="/search", tags=["Search"])
+
