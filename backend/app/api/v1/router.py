@@ -8,6 +8,7 @@ from backend.app.api.v1.endpoints import (
     auth,
     collectors,
     health,
+    messaging,
     notifications,
     pickups,
     reports,
@@ -23,3 +24,4 @@ api_v1_router.include_router(pickups.router)
 api_v1_router.include_router(notifications.router)
 api_v1_router.include_router(activity.router)
 api_v1_router.include_router(analytics.router)
+api_v1_router.include_router(messaging.router)
