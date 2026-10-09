@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { ActivityTimeline } from '../components/activity/ActivityTimeline';
 import type { ActivityLogItem } from '../types/activity';
 
@@ -34,7 +35,11 @@ const mockActivities: ActivityLogItem[] = [
 
 describe('ActivityTimeline Component', () => {
   it('renders timeline items with action, entity, details, and actor', () => {
-    render(<ActivityTimeline activities={mockActivities} showActor={true} />);
+    render(
+      <MemoryRouter>
+        <ActivityTimeline activities={mockActivities} showActor={true} />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText('Report Created')).toBeInTheDocument();
     expect(screen.getByText('report #55')).toBeInTheDocument();
@@ -49,12 +54,20 @@ describe('ActivityTimeline Component', () => {
   });
 
   it('renders empty message when no activities are present', () => {
-    render(<ActivityTimeline activities={[]} emptyMessage="Custom empty message" />);
+    render(
+      <MemoryRouter>
+        <ActivityTimeline activities={[]} emptyMessage="Custom empty message" />
+      </MemoryRouter>
+    );
     expect(screen.getByText('Custom empty message')).toBeInTheDocument();
   });
 
   it('renders loading state when loading is true', () => {
-    render(<ActivityTimeline activities={[]} loading={true} />);
+    render(
+      <MemoryRouter>
+        <ActivityTimeline activities={[]} loading={true} />
+      </MemoryRouter>
+    );
     expect(screen.getByText('Loading activity history...')).toBeInTheDocument();
   });
 });

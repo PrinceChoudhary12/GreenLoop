@@ -8,10 +8,19 @@ export interface AuthContextValue extends AuthState {
   updateUser: (user: User) => void;
 }
 
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+export interface OptionalAuthContextValue extends AuthState {
+  login: (token: string, user: User) => void;
+  logout: () => void;
+  updateUser?: (user: User) => void;
+}
+
+export const AuthContext = createContext<OptionalAuthContextValue | undefined>(undefined);
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
-  return ctx;
+  return {
+    ...ctx,
+    updateUser: ctx.updateUser ?? (() => {}),
+  };
 }

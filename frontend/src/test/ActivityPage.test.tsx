@@ -81,7 +81,7 @@ describe('ActivityPage Component', () => {
     expect(screen.getByText(/Activity Audit Stream/i)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith('test-token');
+      expect(fetchSpy).toHaveBeenCalledWith('test-token', 0, 50);
       expect(screen.getByText(/Created waste report #10 for Plastic waste/i)).toBeInTheDocument();
       expect(screen.getByText(/Scheduled pickup request #5 for 2026-10-01/i)).toBeInTheDocument();
     });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText,
   Truck,
@@ -26,6 +27,8 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   emptyMessage = 'No activity recorded yet.',
   showActor = true,
 }) => {
+  const navigate = useNavigate();
+
   if (loading) {
     return <div className="activity-timeline-empty">Loading activity history...</div>;
   }
@@ -33,6 +36,19 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   if (!activities || activities.length === 0) {
     return <div className="activity-timeline-empty">{emptyMessage}</div>;
   }
+
+  const handleEntityClick = (entityType?: string, entityId?: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!entityType) return;
+    const typeLower = entityType.toLowerCase();
+    if (typeLower === 'pickup') {
+      navigate('/pickups');
+    } else if (typeLower === 'report' && entityId) {
+      navigate(`/reports/${entityId}`);
+    } else if (typeLower === 'report') {
+      navigate('/dashboard');
+    }
+  };
 
   const getActionIcon = (action: ActivityAction) => {
     switch (action) {
@@ -120,7 +136,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   };
 
   return (
-    <div className="activity-timeline">
+    <div className="activity-timeline" role="feed" aria-label="Activity timeline stream">
       <div className="timeline-items-wrapper">
         {activities.map(item => (
           <div key={item.id} className="activity-timeline-item" data-testid="activity-item">
@@ -129,9 +145,16 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               <div className="activity-card-header">
                 <div className="activity-action-title">
                   <span>{formatActionTitle(item.action)}</span>
-                  <span className="activity-entity-tag">
-                    {item.entity_type} #{item.entity_id}
-                  </span>
+                  {item.entity_type && (
+                    <button
+                      className="activity-entity-tag"
+                      onClick={e => handleEntityClick(item.entity_type, item.entity_id, e)}
+                      title={`Navigate to ${item.entity_type} #${item.entity_id || ''}`}
+                      type="button"
+                    >
+                      {item.entity_type} {item.entity_id ? `#${item.entity_id}` : ''}
+                    </button>
+                  )}
                 </div>
                 <span className="activity-timestamp">{formatDate(item.created_at)}</span>
               </div>

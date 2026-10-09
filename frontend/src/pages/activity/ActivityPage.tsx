@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, RefreshCw, AlertCircle, Filter, Calendar } from 'lucide-react';
+import { Activity, RefreshCw, AlertCircle, Filter, Calendar, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { activityService } from '../../services/activityService';
 import { ActivityTimeline } from '../../components/activity/ActivityTimeline';
@@ -10,40 +10,69 @@ export const ActivityPage: React.FC = () => {
   const { token, user } = useAuth();
   const [activities, setActivities] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [filterAction, setFilterAction] = useState<string>('ALL');
+  const [filterEntity, setFilterEntity] = useState<string>('ALL');
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [pageOffset, setPageOffset] = useState<number>(0);
 
-  const loadActivities = useCallback(async () => {
+  const PAGE_LIMIT = 50;
+
+  const loadActivities = useCallback(async (isLoadMore = false) => {
     if (!token || !user) return;
-    setLoading(true);
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setPageOffset(0);
+    }
     setError(null);
+
+    const currentOffset = isLoadMore ? pageOffset + PAGE_LIMIT : 0;
 
     try {
       let res;
       if (user.role === 'ADMIN') {
-        const filters = filterAction !== 'ALL' ? { action: filterAction } : undefined;
+        const filters = {
+          action: filterAction !== 'ALL' ? filterAction : undefined,
+          entity_type: filterEntity !== 'ALL' ? filterEntity : undefined,
+          skip: currentOffset,
+          limit: PAGE_LIMIT,
+        };
         res = await activityService.fetchAdminActivity(token, filters);
       } else if (user.role === 'COLLECTOR') {
-        res = await activityService.fetchCollectorActivity(token);
+        res = await activityService.fetchCollectorActivity(token, currentOffset, PAGE_LIMIT);
       } else {
-        res = await activityService.fetchCitizenActivity(token);
+        res = await activityService.fetchCitizenActivity(token, currentOffset, PAGE_LIMIT);
       }
-      setActivities(res.items || []);
+
+      const newItems = res.items || [];
+      if (isLoadMore) {
+        setActivities(prev => [...prev, ...newItems]);
+        setPageOffset(currentOffset);
+      } else {
+        setActivities(newItems);
+      }
+
+      setHasMore(newItems.length >= PAGE_LIMIT);
     } catch (err: any) {
       setError(err?.message || 'Failed to load activity stream.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [token, user, filterAction]);
+  }, [token, user, filterAction, filterEntity, pageOffset]);
 
   useEffect(() => {
-    loadActivities();
+    loadActivities(false);
   }, [loadActivities]);
 
-  // Client-side filter for citizen & collector if needed
   const displayedActivities = activities.filter(item => {
-    if (filterAction === 'ALL') return true;
-    return item.action === filterAction;
+    if (user?.role === 'ADMIN') return true; // Server-side filtered for admin
+    if (filterAction !== 'ALL' && item.action !== filterAction) return false;
+    if (filterEntity !== 'ALL' && item.entity_type !== filterEntity) return false;
+    return true;
   });
 
   return (
@@ -88,9 +117,24 @@ export const ActivityPage: React.FC = () => {
             </select>
           </div>
 
+          {/* Entity Type Filter */}
+          <div className="activity-filter-wrap">
+            <select
+              className="activity-filter-select"
+              value={filterEntity}
+              onChange={e => setFilterEntity(e.target.value)}
+              aria-label="Filter activities by entity type"
+            >
+              <option value="ALL">All Entities</option>
+              <option value="report">Reports</option>
+              <option value="pickup">Pickups</option>
+              <option value="user">Users</option>
+            </select>
+          </div>
+
           <button
             className="btn btn-ghost btn-sm activity-refresh-btn"
-            onClick={loadActivities}
+            onClick={() => loadActivities(false)}
             disabled={loading}
             aria-label="Refresh activity feed"
           >
@@ -108,7 +152,7 @@ export const ActivityPage: React.FC = () => {
             <strong>Unable to load activity logs</strong>
             <p>{error}</p>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={loadActivities}>
+          <button className="btn btn-ghost btn-sm" onClick={() => loadActivities(false)}>
             Try Again
           </button>
         </div>
@@ -122,7 +166,7 @@ export const ActivityPage: React.FC = () => {
               <span>
                 {loading
                   ? 'Loading events...'
-                  : `${displayedActivities.length} Event${displayedActivities.length === 1 ? '' : 's'} Recorded`}
+                  : `${displayedActivities.length} Event${displayedActivities.length === 1 ? '' : 's'} Loaded`}
               </span>
             </div>
           </div>
@@ -132,12 +176,32 @@ export const ActivityPage: React.FC = () => {
               activities={displayedActivities}
               loading={loading}
               emptyMessage={
-                filterAction !== 'ALL'
-                  ? `No activity events matching "${filterAction.replace(/_/g, ' ')}".`
+                filterAction !== 'ALL' || filterEntity !== 'ALL'
+                  ? 'No activity events match your active filters.'
                   : 'No activity events recorded yet. Perform actions across the platform to populate your activity log.'
               }
               showActor={user?.role === 'ADMIN'}
             />
+
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border, #e2e8f0)' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => loadActivities(true)}
+                  disabled={loadingMore}
+                  aria-label="Load more activity events"
+                >
+                  {loadingMore ? (
+                    'Loading older logs...'
+                  ) : (
+                    <>
+                      <span>Load More History</span>
+                      <ChevronDown size={14} style={{ marginLeft: '4px' }} />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
