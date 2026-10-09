@@ -21,6 +21,7 @@ import { ProfilePage } from './pages/profile/ProfilePage';
 import { HelpPage } from './pages/help/HelpPage';
 import { MapPage } from './pages/map/MapPage';
 import { RewardsPage } from './pages/rewards/RewardsPage';
+import { RecyclingCenters } from './pages/citizen/RecyclingCenters';
 import { fetchHealth } from './services/api';
 import type { HealthResponse, HealthStatus } from './types/health';
 
@@ -212,6 +213,16 @@ export const App: React.FC = () => {
           <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
             <Layout systemStatus={systemStatus}>
               <MapPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recycling-centers"
+        element={
+          <ProtectedRoute allowedRoles={['CITIZEN', 'COLLECTOR', 'ADMIN']}>
+            <Layout systemStatus={systemStatus}>
+              <RecyclingCenters />
             </Layout>
           </ProtectedRoute>
         }

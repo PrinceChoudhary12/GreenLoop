@@ -23,7 +23,7 @@ import { locationService } from '../../services/locationService';
 import type { MapPointItem, UserLocationResponse } from '../../types/location';
 import './MapPage.css';
 
-type FilterType = 'all' | 'report' | 'pickup' | 'collector';
+type FilterType = 'all' | 'report' | 'pickup' | 'collector' | 'center';
 
 export const MapPage: React.FC = () => {
   const { token, user } = useAuth();

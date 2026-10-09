@@ -10,6 +10,8 @@ import {
   Inbox,
   Lock,
   PackageCheck,
+  PlusCircle,
+  Recycle,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -18,11 +20,13 @@ import {
   UserPlus,
   Users,
   UserX,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { adminService } from '../../services/adminService';
 import { pickupService } from '../../services/pickupService';
 import { activityService } from '../../services/activityService';
+import { recyclingCenterService } from '../../services/recyclingCenterService';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ActivityTimeline } from '../../components/activity/ActivityTimeline';
@@ -30,6 +34,7 @@ import type { AdminMetrics, AdminReport, AdminUser, CollectorLookupItem } from '
 import type { ReportStatus } from '../../types/report';
 import type { Pickup, PickupStatus } from '../../types/pickup';
 import type { ActivityLogItem } from '../../types/activity';
+import type { RecyclingCenter, RecyclingCenterCreate } from '../../types/recyclingCenter';
 import './AdminDashboard.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -59,7 +64,7 @@ export const AdminDashboard: React.FC = () => {
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [activities, setActivities] = useState<ActivityLogItem[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'users' | 'reports' | 'pickups' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'reports' | 'pickups' | 'audit' | 'centers'>('users');
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -94,6 +99,92 @@ export const AdminDashboard: React.FC = () => {
   const [scheduleTimeSlot, setScheduleTimeSlot] = useState<string>('Morning (09:00 - 12:00)');
   const [scheduleCollectorId, setScheduleCollectorId] = useState<number | ''>('');
   const [scheduleNotes, setScheduleNotes] = useState<string>('');
+
+  // Recycling Centers state
+  const [centers, setCenters] = useState<RecyclingCenter[]>([]);
+  const [centersLoading, setCentersLoading] = useState(false);
+  const [centersError, setCentersError] = useState<string | null>(null);
+  const [centerSearch, setCenterSearch] = useState('');
+  const [centerShowModal, setCenterShowModal] = useState(false);
+  const [centerEditTarget, setCenterEditTarget] = useState<RecyclingCenter | null>(null);
+  const [centerForm, setCenterForm] = useState<RecyclingCenterCreate>({
+    name: '', address: '', is_active: true,
+  });
+  const [centerSaving, setCenterSaving] = useState(false);
+
+  const loadCenters = useCallback(async () => {
+    if (!token) return;
+    setCentersLoading(true);
+    setCentersError(null);
+    try {
+      const data = await recyclingCenterService.listCenters(token, { is_active: undefined, limit: 100 });
+      setCenters(data);
+    } catch (err: unknown) {
+      setCentersError(err instanceof Error ? err.message : 'Failed to load recycling centers.');
+    } finally {
+      setCentersLoading(false);
+    }
+  }, [token]);
+
+  const openCreateCenter = () => {
+    setCenterEditTarget(null);
+    setCenterForm({ name: '', address: '', is_active: true });
+    setCenterShowModal(true);
+  };
+
+  const openEditCenter = (c: RecyclingCenter) => {
+    setCenterEditTarget(c);
+    setCenterForm({
+      name: c.name,
+      description: c.description || '',
+      address: c.address,
+      latitude: c.latitude ?? undefined,
+      longitude: c.longitude ?? undefined,
+      phone: c.phone || '',
+      email: c.email || '',
+      website: c.website || '',
+      accepted_categories: c.accepted_categories || '',
+      opening_hours: c.opening_hours || '',
+      is_active: c.is_active,
+    });
+    setCenterShowModal(true);
+  };
+
+  const handleCenterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setCenterSaving(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      if (centerEditTarget) {
+        await recyclingCenterService.updateCenter(token, centerEditTarget.id, centerForm);
+        setSuccessMessage(`Center "${centerForm.name}" updated successfully.`);
+      } else {
+        await recyclingCenterService.createCenter(token, centerForm);
+        setSuccessMessage(`Center "${centerForm.name}" created successfully.`);
+      }
+      setCenterShowModal(false);
+      await loadCenters();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to save recycling center.');
+    } finally {
+      setCenterSaving(false);
+    }
+  };
+
+  const handleDeactivateCenter = async (c: RecyclingCenter) => {
+    if (!token) return;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await recyclingCenterService.deleteCenter(token, c.id);
+      setSuccessMessage(`Center "${c.name}" deactivated.`);
+      await loadCenters();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to deactivate center.');
+    }
+  };
 
   const loadAllData = useCallback(async () => {
     if (!token) return;
@@ -156,6 +247,11 @@ export const AdminDashboard: React.FC = () => {
     auditActionFilter,
     auditEntityTypeFilter,
   ]);
+
+  // Load centers when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'centers') loadCenters();
+  }, [activeTab, loadCenters]);
 
   useEffect(() => {
     if (!token) return;
@@ -443,6 +539,7 @@ export const AdminDashboard: React.FC = () => {
           </button>
           <button
             role="tab"
+            id="admin-tab-audit"
             aria-selected={activeTab === 'audit'}
             className={`admin-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
             onClick={() => setActiveTab('audit')}
@@ -450,6 +547,17 @@ export const AdminDashboard: React.FC = () => {
             <History size={16} />
             System Audit Logs
             <span className="tab-counter">{activities.length}</span>
+          </button>
+          <button
+            role="tab"
+            id="admin-tab-centers"
+            aria-selected={activeTab === 'centers'}
+            className={`admin-tab-btn ${activeTab === 'centers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('centers')}
+          >
+            <Recycle size={16} />
+            Recycling Centers
+            <span className="tab-counter">{centers.length}</span>
           </button>
         </div>
 
@@ -939,6 +1047,101 @@ export const AdminDashboard: React.FC = () => {
             />
           </div>
         )}
+
+        {/* Tab 5: Recycling Centers */}
+        {activeTab === 'centers' && (
+          <div className="tab-pane" role="tabpanel" aria-labelledby="admin-tab-centers">
+            <div className="filter-toolbar" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="filter-group">
+                <input
+                  type="text"
+                  placeholder="Search by name or address…"
+                  value={centerSearch}
+                  onChange={e => setCenterSearch(e.target.value)}
+                  className="filter-input"
+                  id="admin-center-search"
+                />
+              </div>
+              <button
+                id="admin-create-center-btn"
+                className="btn btn-primary btn-sm"
+                onClick={openCreateCenter}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <PlusCircle size={15} />
+                Add Center
+              </button>
+            </div>
+
+            {centersLoading ? (
+              <div className="tab-empty-state" aria-busy="true">Loading centers…</div>
+            ) : centersError ? (
+              <div className="admin-alert alert-error" role="alert">
+                <AlertCircle size={18} />
+                <span>{centersError}</span>
+                <button className="btn btn-ghost btn-sm" onClick={loadCenters}><RefreshCw size={14} /></button>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Address</th>
+                      <th>Accepts</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {centers
+                      .filter(c =>
+                        !centerSearch ||
+                        c.name.toLowerCase().includes(centerSearch.toLowerCase()) ||
+                        c.address.toLowerCase().includes(centerSearch.toLowerCase())
+                      )
+                      .map(c => (
+                        <tr key={c.id}>
+                          <td><strong>{c.name}</strong></td>
+                          <td style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{c.address}</td>
+                          <td style={{ fontSize: '0.75rem' }}>{c.accepted_categories || '—'}</td>
+                          <td>
+                            <span className={`status-pill ${c.is_active ? 'pill-resolved' : 'pill-cancelled'}`}>
+                              {c.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => openEditCenter(c)}
+                                title="Edit center"
+                              >Edit</button>
+                              {c.is_active && (
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeactivateCenter(c)}
+                                  title="Deactivate center"
+                                >Deactivate</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    }
+                    {centers.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                          No recycling centers added yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Report Assignment Modal Dialog */}
@@ -1119,6 +1322,177 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recycling Center Create / Edit Modal */}
+      {centerShowModal && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Recycling center form">
+          <div className="modal-panel" style={{ maxWidth: 560 }}>
+            <div className="modal-header">
+              <h3 className="modal-title">
+                {centerEditTarget ? 'Edit Recycling Center' : 'Add Recycling Center'}
+              </h3>
+              <button className="modal-close-btn" onClick={() => setCenterShowModal(false)} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <form className="modal-form" onSubmit={handleCenterSubmit}>
+              <div className="form-field">
+                <label htmlFor="center-name">Name *</label>
+                <input
+                  id="center-name"
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={200}
+                  value={centerForm.name}
+                  onChange={e => setCenterForm(f => ({ ...f, name: e.target.value }))}
+                  className="filter-input"
+                  placeholder="e.g. GreenCity Recycling Hub"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="center-address">Address *</label>
+                <input
+                  id="center-address"
+                  type="text"
+                  required
+                  minLength={5}
+                  maxLength={500}
+                  value={centerForm.address}
+                  onChange={e => setCenterForm(f => ({ ...f, address: e.target.value }))}
+                  className="filter-input"
+                  placeholder="e.g. 123 Green Street, Eco City"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="center-desc">Description</label>
+                <textarea
+                  id="center-desc"
+                  rows={2}
+                  maxLength={2000}
+                  value={centerForm.description || ''}
+                  onChange={e => setCenterForm(f => ({ ...f, description: e.target.value }))}
+                  className="filter-input"
+                  style={{ width: '100%', resize: 'vertical' }}
+                  placeholder="Brief description of the center"
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-field">
+                  <label htmlFor="center-lat">Latitude</label>
+                  <input
+                    id="center-lat"
+                    type="number"
+                    step="any"
+                    min={-90}
+                    max={90}
+                    value={centerForm.latitude ?? ''}
+                    onChange={e => setCenterForm(f => ({ ...f, latitude: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="filter-input"
+                    placeholder="e.g. 37.7749"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="center-lon">Longitude</label>
+                  <input
+                    id="center-lon"
+                    type="number"
+                    step="any"
+                    min={-180}
+                    max={180}
+                    value={centerForm.longitude ?? ''}
+                    onChange={e => setCenterForm(f => ({ ...f, longitude: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="filter-input"
+                    placeholder="e.g. -122.4194"
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-field">
+                  <label htmlFor="center-phone">Phone</label>
+                  <input
+                    id="center-phone"
+                    type="tel"
+                    maxLength={30}
+                    value={centerForm.phone || ''}
+                    onChange={e => setCenterForm(f => ({ ...f, phone: e.target.value }))}
+                    className="filter-input"
+                    placeholder="+1 555 000 0000"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="center-email">Email</label>
+                  <input
+                    id="center-email"
+                    type="email"
+                    maxLength={254}
+                    value={centerForm.email || ''}
+                    onChange={e => setCenterForm(f => ({ ...f, email: e.target.value }))}
+                    className="filter-input"
+                    placeholder="info@center.org"
+                  />
+                </div>
+              </div>
+              <div className="form-field">
+                <label htmlFor="center-website">Website</label>
+                <input
+                  id="center-website"
+                  type="url"
+                  maxLength={500}
+                  value={centerForm.website || ''}
+                  onChange={e => setCenterForm(f => ({ ...f, website: e.target.value }))}
+                  className="filter-input"
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="center-cats">Accepted Categories (comma-separated)</label>
+                <input
+                  id="center-cats"
+                  type="text"
+                  maxLength={500}
+                  value={centerForm.accepted_categories || ''}
+                  onChange={e => setCenterForm(f => ({ ...f, accepted_categories: e.target.value }))}
+                  className="filter-input"
+                  placeholder="PLASTIC,GLASS,METAL,PAPER"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="center-hours">Opening Hours</label>
+                <input
+                  id="center-hours"
+                  type="text"
+                  maxLength={500}
+                  value={centerForm.opening_hours || ''}
+                  onChange={e => setCenterForm(f => ({ ...f, opening_hours: e.target.value }))}
+                  className="filter-input"
+                  placeholder="Mon–Fri 08:00–18:00, Sat 09:00–14:00"
+                />
+              </div>
+              <div className="form-field">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={centerForm.is_active ?? true}
+                    onChange={e => setCenterForm(f => ({ ...f, is_active: e.target.checked }))}
+                  />
+                  Active (visible to citizens)
+                </label>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-ghost btn-md" onClick={() => setCenterShowModal(false)}>Cancel</button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-md"
+                  disabled={centerSaving}
+                >
+                  {centerSaving ? 'Saving…' : centerEditTarget ? 'Update Center' : 'Create Center'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

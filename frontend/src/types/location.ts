@@ -9,7 +9,7 @@ export interface UserLocationResponse {
 
 export interface MapPointItem {
   id: string;
-  point_type: 'report' | 'pickup' | 'collector';
+  point_type: 'report' | 'pickup' | 'collector' | 'center';
   entity_id: number;
   title: string;
   description?: string | null;

@@ -4,6 +4,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from backend.app.models.user import User
+from backend.app.repositories.recycling_center_repository import RecyclingCenterRepository
 from backend.app.repositories.search_repository import SearchRepository
 from backend.app.schemas.search import GlobalSearchResponse, SearchResultItem
 
@@ -69,6 +70,25 @@ class SearchService:
                     status=status_val,
                     target_url=f"/pickups?pickupId={p.id}",
                     created_at=p.created_at.isoformat() if p.created_at else None,
+                )
+            )
+
+        # 3. Search Recycling Centers (all authenticated roles)
+        center_repo = RecyclingCenterRepository(self.db)
+        centers = center_repo.search_centers(clean_query, limit=MAX_RESULTS_PER_CATEGORY)
+        for c in centers:
+            cats = c.accepted_categories or ""
+            results.append(
+                SearchResultItem(
+                    id=f"center_{c.id}",
+                    entity_type="center",
+                    entity_id=c.id,
+                    title=c.name,
+                    subtitle=f"{c.address} | Accepts: {cats}",
+                    category="RECYCLING_CENTER",
+                    status="ACTIVE" if c.is_active else "INACTIVE",
+                    target_url="/recycling-centers",
+                    created_at=c.created_at.isoformat() if c.created_at else None,
                 )
             )
 

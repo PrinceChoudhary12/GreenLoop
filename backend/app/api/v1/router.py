@@ -12,6 +12,7 @@ from backend.app.api.v1.endpoints import (
     messaging,
     notifications,
     pickups,
+    recycling_centers,
     reports,
     search,
 )
@@ -29,4 +30,4 @@ api_v1_router.include_router(analytics.router)
 api_v1_router.include_router(messaging.router)
 api_v1_router.include_router(location.router)
 api_v1_router.include_router(search.router, prefix="/search", tags=["Search"])
-
+api_v1_router.include_router(recycling_centers.router)

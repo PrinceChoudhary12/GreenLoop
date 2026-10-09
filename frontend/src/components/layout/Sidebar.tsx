@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Award,
   MapPin,
+  Recycle,
   Settings,
   HelpCircle,
   ChevronLeft,
@@ -98,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const platformItems: NavItemConfig[] = [
       { label: 'Live Map', to: '/map', icon: MapPin },
+      { label: 'Recycling Centers', to: '/recycling-centers', icon: Recycle },
       {
         label: 'Notifications',
         to: '/notifications',

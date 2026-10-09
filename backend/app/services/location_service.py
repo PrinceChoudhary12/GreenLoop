@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 from backend.app.repositories.location_repository import LocationRepository
+from backend.app.repositories.recycling_center_repository import RecyclingCenterRepository
 from backend.app.schemas.location import (
     ConsentTogglePayload,
     LocationUpdatePayload,
@@ -198,6 +199,28 @@ class LocationService:
                             is_stale=stale,
                         )
                     )
+
+        # 4. Recycling Centers (visible to all authenticated roles)
+        center_repo = RecyclingCenterRepository(db)
+        centers = center_repo.list_centers(is_active=True, limit=200)
+        for center in centers:
+            if center.latitude is not None and center.longitude is not None:
+                cats = center.accepted_categories or ""
+                map_points.append(
+                    MapPointItem(
+                        id=f"center_{center.id}",
+                        point_type="center",
+                        entity_id=center.id,
+                        title=center.name,
+                        description=f"{center.address} | Accepts: {cats}",
+                        latitude=center.latitude,
+                        longitude=center.longitude,
+                        status="ACTIVE",
+                        updated_at=center.updated_at,
+                        is_live=False,
+                        is_stale=False,
+                    )
+                )
 
         # Current user's location state
         user_loc_resp = LocationService.get_my_location(db=db, current_user=current_user)
