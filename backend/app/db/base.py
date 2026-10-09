@@ -2,6 +2,7 @@
 
 from backend.app.models.activity import ActivityLog
 from backend.app.models.base import Base
+from backend.app.models.location import UserLocation
 from backend.app.models.messaging import Conversation, ConversationParticipant, Message
 from backend.app.models.notification import Notification
 from backend.app.models.pickup import Pickup
@@ -18,4 +19,5 @@ __all__ = [
     "Conversation",
     "ConversationParticipant",
     "Message",
+    "UserLocation",
 ]
