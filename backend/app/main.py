@@ -13,6 +13,8 @@ from backend.app.api.v1.router import api_v1_router
 from backend.app.core.config import settings
 from backend.app.core.exceptions import register_exception_handlers
 from backend.app.core.logging import get_logger, setup_logging
+from backend.app.core.rate_limit import RateLimitMiddleware
+from backend.app.core.security_headers import SecurityHeadersMiddleware
 from backend.app.db.base import Base
 from backend.app.db.session import engine, get_db
 from backend.app.schemas.health import HealthResponse
@@ -71,6 +73,12 @@ def create_application() -> FastAPI:
         openapi_url="/openapi.json",
         lifespan=lifespan,
     )
+
+    # Security Headers Middleware
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # Rate Limiting Middleware
+    app.add_middleware(RateLimitMiddleware)
 
     # CORS Middleware
     if settings.BACKEND_CORS_ORIGINS:
