@@ -21,39 +21,45 @@ GreenLoop bridges the gap between citizens, waste collectors, recycling centers,
 
 ## 3. Current Version & Development Status
 
-- **Current Version**: `v0.6.0`
-- **Current Milestone**: `Milestone 06 — In-App Notifications & Activity Tracking`
-- **Status**: **Completed & Verified**
-- **Next Milestone**: `Milestone 07 — Analytics & Reporting Dashboard` (Target: `v0.7.0`)
+- **Current Version**: `v0.8.0`
+- **Milestone Scope**: Core Milestones M01–M08 & Platform UI 2.0 Phases 1–7
+- **Status**: **Verified Production Readiness & Deployment Ready**
+- **Quality Gates**: 104/104 Backend Pytest Passed | 81/81 Frontend Vitest Passed | TypeScript/Vite Build Clean | Oxlint Zero Errors
 
 ### Feature Status Matrix
 
-| Component / Feature | Status | Milestone |
+| Component / Feature | Status | Milestone / Phase |
 | :--- | :--- | :--- |
-| **Modular Layered Architecture (API, Services, Repositories, ORM)** | **Implemented** | Milestone 01 |
-| **FastAPI Backend Core & API v1 Versioning** | **Implemented** | Milestone 01 |
-| **Database Connection Pool & Base Entity Models** | **Implemented** | Milestone 01 |
-| **Centralized Safe Logging & Error Handling** | **Implemented** | Milestone 01 |
-| **System & Database Health Check Endpoints** | **Implemented** | Milestone 01 |
-| **React + TypeScript + Vite UI Design Foundation** | **Implemented** | Milestone 01 |
-| **Automated Backend (pytest) & Frontend (Vitest) Test Suites** | **Implemented** | Milestone 01 |
-| **Citizen Registration, Authentication (JWT), & Role Management** | **Implemented** | Milestone 02 |
-| **Citizen Waste Reporting, Photo Upload & Report Details** | **Implemented** | Milestone 02 |
-| **Collector Registration, Workspace & Available Queue** | **Implemented** | Milestone 03 |
-| **Task Claiming & Lifecycle Status Transitions (Accepted/Resolved)** | **Implemented** | Milestone 03 |
-| **Admin Dashboard, Platform Metrics & Analytics** | **Implemented** | Milestone 04 |
-| **User Directory Moderation & Status Activation Toggle** | **Implemented** | Milestone 04 |
-| **Manual Collector Assignment & Admin Status Override** | **Implemented** | Milestone 04 |
-| **Scheduled Waste Pickup Requests & Duplicate Concurrency Guard** | **Implemented** | Milestone 05 |
-| **Multi-Role Pickup Logistics Lifecycle (Schedule → Assign → Accept → In Progress → Complete)** | **Implemented** | Milestone 05 |
-| **Role-Enforced Cancellation Rules & Atomic Waste Report Resolution** | **Implemented** | Milestone 05 |
-| **In-App User Notifications, Unread Counter & Mark-as-Read** | **Implemented** | Milestone 06 |
-| **Platform-Wide Audit Logging & Citizen/Collector Activity Timelines** | **Implemented** | Milestone 06 |
-| Analytics & Reporting Dashboard (KPIs, Categories, Trends & Pure SVG Charts) | *Planned* | Milestone 07 |
-| Recycling Center Discovery & Resource Directory | *Planned* | Milestone 08 |
-| Interactive Map & Geospatial Logistics Visualizer | *Planned* | Milestone 09 |
-| Gamification, Eco-Points & Citizen Rewards | *Planned* | Milestone 10 |
-| Production Hardening, PostgreSQL, Docker & Master Release v1.0.0 | *Planned* | Milestone 11 |
+| **Modular Layered Architecture (API, Services, Repositories, ORM)** | **Verified Complete** | Milestone 01 |
+| **FastAPI Backend Core & API v1 Versioning** | **Verified Complete** | Milestone 01 |
+| **Database Connection Pool & Base Entity Models** | **Verified Complete** | Milestone 01 |
+| **Centralized Safe Logging & Error Handling** | **Verified Complete** | Milestone 01 |
+| **System & Database Health Check Endpoints** | **Verified Complete** | Milestone 01 |
+| **React + TypeScript + Vite UI Design Foundation** | **Verified Complete** | Milestone 01 |
+| **Citizen Registration, Authentication (JWT), & Role Management** | **Verified Complete** | Milestone 02 |
+| **Citizen Waste Reporting, Photo Upload & Report Details** | **Verified Complete** | Milestone 02 |
+| **Collector Registration, Workspace & Available Queue** | **Verified Complete** | Milestone 03 |
+| **Task Claiming & Lifecycle Status Transitions (Accepted/Resolved)** | **Verified Complete** | Milestone 03 |
+| **Admin Dashboard, Platform Metrics & Analytics** | **Verified Complete** | Milestone 04 |
+| **User Directory Moderation & Status Activation Toggle** | **Verified Complete** | Milestone 04 |
+| **Manual Collector Assignment & Admin Status Override** | **Verified Complete** | Milestone 04 |
+| **Scheduled Waste Pickup Requests & Duplicate Concurrency Guard** | **Verified Complete** | Milestone 05 |
+| **Multi-Role Pickup Logistics Lifecycle (Schedule → Assign → Accept → In Progress → Complete)** | **Verified Complete** | Milestone 05 |
+| **Role-Enforced Cancellation Rules & Atomic Waste Report Resolution** | **Verified Complete** | Milestone 05 |
+| **In-App User Notifications, Unread Counter & Mark-as-Read** | **Verified Complete** | Milestone 06 |
+| **Platform-Wide Audit Logging & Citizen/Collector Activity Timelines** | **Verified Complete** | Milestone 06 |
+| **Analytics & Reporting Dashboard (KPIs, Categories, Trends & Pure SVG Charts)** | **Verified Complete** | Milestone 07 |
+| **Recycling Centers Directory & Resource Discovery** | **Verified Complete** | Milestone 08 |
+| **Application Shell, Navigation & Responsive Platform Layout** | **Verified Complete** | Platform UI 2.0 (Phase 1) |
+| **Appearance Studio, Themes & Visual Preferences** | **Verified Complete** | Platform UI 2.0 (Phase 2) |
+| **Profile Management, Account & Security Controls** | **Verified Complete** | Platform UI 2.0 (Phase 3) |
+| **Notification Bell & Activity Notification Center** | **Verified Complete** | Platform UI 2.0 (Phase 4) |
+| **Direct Real-Time Messaging & Conversation Threads** | **Verified Complete** | Platform UI 2.0 (Phase 5) |
+| **Live Location & Geospatial Map Visualizer** | **Verified Complete** | Platform UI 2.0 (Phase 6) |
+| **Global Role-Aware Search & Command Palette** | **Verified Complete** | Platform UI 2.0 (Phase 7) |
+| **Production Security Hardening (CSP, Headers, Magic Bytes, Rate Limiting)** | **Verified Complete** | Release Readiness |
+| **Database Migrations & PostgreSQL Support (Alembic & Preflight Runner)** | **Verified Complete** | Release Readiness |
+| **Containerized Deployment Infrastructure (Dockerfiles, Nginx, Compose Stack)** | **Verified Complete** | Release Readiness |
 
 ---
 
@@ -148,9 +154,28 @@ GreenLoop/
 
 ---
 
-## 6. Local Setup & Execution
+### Docker Compose (Production / Staging Stack)
 
-### Quick Start (Automated)
+The fastest and most reproducible way to run the complete GreenLoop stack (PostgreSQL 16, FastAPI backend, Alembic migrations, and React SPA with Nginx):
+
+```bash
+# Copy and configure environment variables
+cp .env.production.example .env
+
+# Build and start all services in the background
+docker compose up -d --build
+
+# Inspect service logs
+docker compose logs -f backend
+```
+
+- **Frontend Application**: `http://localhost:80`
+- **Backend API Docs**: `http://localhost:80/api/v1/docs` (or via direct port 8000)
+- **Health Probe**: `http://localhost:80/health`
+
+---
+
+### Local Development Setup (Automated)
 
 ```bash
 # Clone the repository and navigate into it
