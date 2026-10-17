@@ -74,3 +74,11 @@ backups/
 *.sql
 *.sql.gz
 *.tar.gz
+
+# Certificates & Private Keys
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*.p12

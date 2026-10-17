@@ -52,24 +52,47 @@ GreenLoop is deployed as a three-tier containerized service:
 
 ## 3. Configuration & Secrets Management
 
-1. Copy the production template:
-   ```bash
-   cp .env.production.example .env
-   ```
+In production (`APP_ENV=production`), the application enforces strict security validation at startup:
+- **`SECRET_KEY`**: Must be a unique, cryptographically strong token (minimum 32 characters) generated outside source control. The server will **abort startup** if it is missing, too short, or set to a known development or placeholder value.
+- **`POSTGRES_PASSWORD`**: Must be a strong password generated outside source control.
+- **`DEBUG`**: Must be explicitly set to `False`.
+- **`BACKEND_CORS_ORIGINS`**: Must be configured with your approved production domains (cannot fall back to localhost defaults).
 
-2. Generate cryptographically strong secrets:
-   ```bash
-   # Generate SECRET_KEY (minimum 32 characters)
-   openssl rand -hex 32
+### 3.1 Securely Initializing the Production Environment File
 
-   # Generate POSTGRES_PASSWORD
-   openssl rand -hex 24
-   ```
+To create high-entropy secrets without printing them to terminal scrollback buffers, CI logs, or shell histories, while safely preserving existing `.env` files without duplicate keys:
 
-3. Update `.env` with:
-   - `SECRET_KEY`
-   - `POSTGRES_PASSWORD` and matching `DATABASE_URL`
-   - `BACKEND_CORS_ORIGINS` (pointing to your production domain)
+```bash
+# 1. Check if .env already exists (never silently overwrite existing secrets):
+if [ -f .env ]; then
+  echo "Notice: .env already exists. Existing secrets preserved."
+  echo "To reconfigure, manually edit .env or back it up (e.g., cp .env .env.backup) before removing."
+else
+  # 2. Copy production template with owner-only (600) permissions:
+  (umask 077 && cp .env.production.example .env)
+
+  # 3. Generate high-entropy secrets directly in-place without terminal echoing:
+  DB_PASS=$(openssl rand -hex 24)
+  PROD_SECRET=$(openssl rand -hex 32)
+
+  # 4. Safely substitute placeholder tokens in-place (cross-platform macOS & Linux):
+  sed -i.bak \
+    -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${DB_PASS}|" \
+    -e "s|^SECRET_KEY=.*|SECRET_KEY=${PROD_SECRET}|" \
+    -e "s|replace_with_strong_database_password_min_24_chars|${DB_PASS}|g" \
+    .env && rm -f .env.bak
+
+  unset DB_PASS PROD_SECRET
+  echo "Production .env initialized with secure random secrets (permissions: 600)."
+fi
+```
+
+### 3.2 Verify Production Configuration Safety
+Before starting containers, verify that Docker Compose can interpolate all required variables:
+```bash
+docker compose config --quiet
+```
+If any required secret is missing, Docker Compose will immediately refuse to start with an explicit error message.
 
 ---
 
