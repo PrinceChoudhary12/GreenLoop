@@ -31,7 +31,7 @@ services:
       APP_NAME: "GreenLoop"
       APP_ENV: ${APP_ENV:-production}
       DEBUG: "False"
-      DATABASE_URL: postgresql://${POSTGRES_USER:-greenloop_user}:${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}@db:5432/${POSTGRES_DB:-greenloop}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-greenloop_user}:${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}@db:5432/${POSTGRES_DB:-greenloop}
       SECRET_KEY: ${SECRET_KEY:-greenloop-production-secret-key-replace-with-secure-32-chars-token}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
       UPLOAD_DIR: "/app/uploads"
