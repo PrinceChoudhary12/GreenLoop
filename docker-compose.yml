@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-greenloop}
       POSTGRES_USER: ${POSTGRES_USER:-greenloop_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,9 +31,9 @@ services:
       APP_NAME: "GreenLoop"
       APP_ENV: ${APP_ENV:-production}
       DEBUG: "False"
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-greenloop_user}:${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}@db:5432/${POSTGRES_DB:-greenloop}
-      SECRET_KEY: ${SECRET_KEY:-greenloop-production-secret-key-replace-with-secure-32-chars-token}
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+      DATABASE_URL: "${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-greenloop_user}:${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be explicitly configured in .env}@db:5432/${POSTGRES_DB:-greenloop}}"
+      SECRET_KEY: "${SECRET_KEY:?Error: SECRET_KEY must be explicitly configured in .env}"
+      BACKEND_CORS_ORIGINS: "${BACKEND_CORS_ORIGINS:?Error: BACKEND_CORS_ORIGINS must be explicitly configured in .env}"
       UPLOAD_DIR: "/app/uploads"
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
       RATE_LIMIT_ENABLED: "True"
