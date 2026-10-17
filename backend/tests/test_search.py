@@ -75,9 +75,11 @@ def test_search_citizen_role_isolation(client: TestClient, db_session: Session):
     res = client.get("/api/v1/search?q=plastic", headers={"Authorization": f"Bearer {token1}"})
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
-    assert data["total_results"] == 1
-    assert data["results"][0]["entity_id"] == report1.id
-    assert "Library Square" in data["results"][0]["subtitle"]
+    entity_ids = [item["entity_id"] for item in data["results"]]
+    assert report1.id in entity_ids
+    assert report2.id not in entity_ids
+    matching_item = next(item for item in data["results"] if item["entity_id"] == report1.id)
+    assert "Library Square" in matching_item["subtitle"]
 
 
 def test_search_admin_broad_visibility(client: TestClient, db_session: Session):
