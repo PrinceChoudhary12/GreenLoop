@@ -70,3 +70,7 @@ Thumbs.db
 *.swp
 *.swo
 uploads/
+backups/
+*.sql
+*.sql.gz
+*.tar.gz
