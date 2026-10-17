@@ -42,7 +42,9 @@ class Settings(BaseSettings):
     ]
 
     # CORS origins
-    BACKEND_CORS_ORIGINS: List[str] = [
+    # Type is Union[List[str], str] so pydantic-settings v2 does NOT attempt
+    # JSON-decoding before our validator runs (it only auto-decodes List[str]).
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5175",
