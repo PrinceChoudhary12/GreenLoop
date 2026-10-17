@@ -22,6 +22,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: BACKEND_CORS_ORIGINS
-        value: "https://greencycle.vercel.app,https://greencycle-app.vercel.app,https://greenloop.vercel.app"
+        value: "https://green-loop-beige.vercel.app,https://greenloop.vercel.app"
       - key: RATE_LIMIT_ENABLED
         value: "true"
