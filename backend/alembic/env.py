@@ -28,6 +28,8 @@ def get_database_url() -> str:
     url = config.get_main_option("sqlalchemy.url")
     if not url or "driver://user:pass" in url:
         url = settings.DATABASE_URL
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
     # Ensure SQLite paths are absolute when relative
     if url.startswith("sqlite:///") and not url.startswith("sqlite:////") and url != "sqlite:///:memory:":
         rel_path = url.replace("sqlite:///", "").lstrip("./")

@@ -27,6 +27,8 @@ logger = get_logger("greenloop.migrations")
 
 def wait_for_database(db_url: str, max_retries: int = 30, retry_interval: float = 2.0) -> bool:
     """Wait for database server readiness (especially PostgreSQL in Docker)."""
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
     logger.info(f"Checking database connectivity for target: {db_url.split('@')[-1] if '@' in db_url else db_url}")
     engine = create_engine(db_url, pool_pre_ping=True)
     for attempt in range(1, max_retries + 1):

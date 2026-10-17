@@ -21,6 +21,8 @@ if db_url.startswith("sqlite"):
         backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         abs_db_path = os.path.join(backend_dir, rel_path)
         db_url = f"sqlite:///{abs_db_path}"
+elif db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(
     db_url,
