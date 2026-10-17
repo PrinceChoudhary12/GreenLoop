@@ -168,7 +168,7 @@ export const ReportDetail: React.FC = () => {
           <div className="detail-section">
             <h2 className="detail-section-title">Photo</h2>
             <img
-              src={`${API_BASE}${report.image_path}`}
+              src={report.image_path.startsWith('http://') || report.image_path.startsWith('https://') ? report.image_path : `${API_BASE}${report.image_path}`}
               alt="Waste photo submitted with report"
               className="detail-image"
             />

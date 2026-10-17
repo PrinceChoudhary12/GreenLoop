@@ -1,7 +1,7 @@
 """Application configuration using Pydantic Settings."""
 
 import json
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -40,6 +40,15 @@ class Settings(BaseSettings):
         "image/webp",
         "image/jpg",
     ]
+
+    # Cloud Object Storage (optional for production persistence: Cloudinary or Supabase)
+    CLOUDINARY_URL: Optional[str] = None
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_BUCKET: str = "uploads"
 
     # CORS origins
     # Type is Union[List[str], str] so pydantic-settings v2 does NOT attempt

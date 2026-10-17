@@ -22,6 +22,8 @@ import type { Pickup } from '../../types/pickup';
 import type { ActivityLogItem } from '../../types/activity';
 import './CollectorDashboard.css';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
 const CATEGORY_LABELS: Record<string, string> = {
   GENERAL: 'General Waste',
   PLASTIC: 'Plastic',
@@ -358,7 +360,7 @@ export const CollectorDashboard: React.FC = () => {
                     {report.image_path && (
                       <div className="card-image-preview">
                         <a
-                          href={report.image_path}
+                          href={report.image_path.startsWith('http://') || report.image_path.startsWith('https://') ? report.image_path : `${API_BASE}${report.image_path}`}
                           target="_blank"
                           rel="noreferrer"
                           className="image-link"
@@ -450,7 +452,7 @@ export const CollectorDashboard: React.FC = () => {
                     {report.image_path && (
                       <div className="card-image-preview">
                         <a
-                          href={report.image_path}
+                          href={report.image_path.startsWith('http://') || report.image_path.startsWith('https://') ? report.image_path : `${API_BASE}${report.image_path}`}
                           target="_blank"
                           rel="noreferrer"
                           className="image-link"

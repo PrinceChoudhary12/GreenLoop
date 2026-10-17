@@ -49,6 +49,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
 function getStatusForBadge(status: string): 'healthy' | 'degraded' | 'unhealthy' {
   if (status === 'RESOLVED' || status === 'COMPLETED') return 'healthy';
   if (status === 'REJECTED' || status === 'CANCELLED') return 'unhealthy';
@@ -787,7 +789,7 @@ export const AdminDashboard: React.FC = () => {
                             <span className="loc-desc">{r.description}</span>
                             {r.image_path && (
                               <a
-                                href={r.image_path}
+                                href={r.image_path.startsWith('http://') || r.image_path.startsWith('https://') ? r.image_path : `${API_BASE}${r.image_path}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="img-link"

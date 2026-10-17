@@ -82,12 +82,88 @@ class StorageService:
 
         # 4. Generate collision-resistant unique filename
         unique_filename = f"{uuid.uuid4().hex}{ext}"
+        # 5. Save image: attempt persistent cloud storage if configured, otherwise save to local disk
+        cloud_url = await cls._save_to_cloud(contents, unique_filename, content_type)
+        if cloud_url:
+            return cloud_url
+
+        # Fallback to local disk storage
         upload_dir = cls._ensure_upload_dir()
         file_path = os.path.join(upload_dir, unique_filename)
-
-        # 5. Write to disk
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        logger.info(f"Image uploaded successfully: {unique_filename} ({len(contents)} bytes)")
+        logger.info(f"Image uploaded locally: {unique_filename} ({len(contents)} bytes)")
         return f"/uploads/{unique_filename}"
+
+    @classmethod
+    async def _save_to_cloud(cls, contents: bytes, filename: str, content_type: str) -> Optional[str]:
+        """Upload to Cloudinary or Supabase Storage if configured."""
+        import hashlib
+        import time
+        from urllib.parse import urlparse
+        import httpx
+
+        # 1. Cloudinary upload
+        cloud_name = settings.CLOUDINARY_CLOUD_NAME
+        api_key = settings.CLOUDINARY_API_KEY
+        api_secret = settings.CLOUDINARY_API_SECRET
+
+        if settings.CLOUDINARY_URL and not cloud_name:
+            try:
+                parsed = urlparse(settings.CLOUDINARY_URL)
+                api_key = parsed.username
+                api_secret = parsed.password
+                cloud_name = parsed.hostname
+            except Exception as e:
+                logger.warning(f"Failed to parse CLOUDINARY_URL: {e}")
+
+        if cloud_name and api_key and api_secret:
+            try:
+                timestamp = str(int(time.time()))
+                public_id = f"greencycle/{os.path.splitext(filename)[0]}"
+                to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
+                signature = hashlib.sha1(to_sign.encode("utf-8")).hexdigest()
+
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.post(
+                        f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload",
+                        data={
+                            "api_key": api_key,
+                            "timestamp": timestamp,
+                            "public_id": public_id,
+                            "signature": signature,
+                        },
+                        files={"file": (filename, contents, content_type)},
+                    )
+                    if resp.status_code in (200, 201):
+                        data = resp.json()
+                        secure_url = data.get("secure_url")
+                        if secure_url:
+                            logger.info(f"Image uploaded to Cloudinary: {secure_url}")
+                            return secure_url
+                    logger.warning(f"Cloudinary upload returned status {resp.status_code}: {resp.text}")
+            except Exception as e:
+                logger.warning(f"Cloudinary upload exception, falling back: {e}")
+
+        # 2. Supabase Storage upload
+        if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+            try:
+                base_url = settings.SUPABASE_URL.rstrip("/")
+                upload_url = f"{base_url}/storage/v1/object/{settings.SUPABASE_BUCKET}/{filename}"
+                headers = {
+                    "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+                    "apiKey": settings.SUPABASE_KEY,
+                    "Content-Type": content_type or "image/jpeg",
+                }
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.post(upload_url, content=contents, headers=headers)
+                    if resp.status_code in (200, 201):
+                        public_url = f"{base_url}/storage/v1/object/public/{settings.SUPABASE_BUCKET}/{filename}"
+                        logger.info(f"Image uploaded to Supabase Storage: {public_url}")
+                        return public_url
+                    logger.warning(f"Supabase Storage returned status {resp.status_code}: {resp.text}")
+            except Exception as e:
+                logger.warning(f"Supabase Storage exception, falling back: {e}")
+
+        return None
