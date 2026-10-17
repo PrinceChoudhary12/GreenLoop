@@ -50,11 +50,11 @@ describe('NotificationsPage Component', () => {
     vi.resetAllMocks();
   });
 
-  it('renders notifications list with items and filtering', async () => {
+  it('renders notifications list with items and category filtering', async () => {
     vi.spyOn(notificationService, 'fetchNotifications').mockResolvedValue({
       items: mockNotifications,
       total: 2,
-      unread_count: 1,
+      unread_count: 2,
     });
 
     render(
@@ -67,6 +67,7 @@ describe('NotificationsPage Component', () => {
             isLoading: false,
             login: vi.fn(),
             logout: vi.fn(),
+            updateUser: vi.fn(),
           }}
         >
           <NotificationsPage />
@@ -75,14 +76,20 @@ describe('NotificationsPage Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Notifications')).toBeInTheDocument();
+      expect(screen.getByText('Notifications Center')).toBeInTheDocument();
       expect(screen.getByText('Report Claimed')).toBeInTheDocument();
       expect(screen.getByText('Pickup Completed')).toBeInTheDocument();
-      expect(screen.getByText(/Unread/i)).toBeInTheDocument();
     });
+
+    // Test Pickups filter
+    const pickupsTab = screen.getByRole('tab', { name: 'Pickups' });
+    fireEvent.click(pickupsTab);
+
+    expect(screen.getByText('Pickup Completed')).toBeInTheDocument();
+    expect(screen.queryByText('Report Claimed')).not.toBeInTheDocument();
   });
 
-  it('handles mark as read and mark all as read actions', async () => {
+  it('handles mark as read and mark all as read actions with feedback', async () => {
     vi.spyOn(notificationService, 'fetchNotifications').mockResolvedValue({
       items: mockNotifications,
       total: 2,
@@ -94,7 +101,7 @@ describe('NotificationsPage Component', () => {
     });
     const markAllSpy = vi.spyOn(notificationService, 'markAllAsRead').mockResolvedValue({
       success: true,
-      marked_count: 1,
+      marked_count: 2,
     });
 
     render(
@@ -107,6 +114,7 @@ describe('NotificationsPage Component', () => {
             isLoading: false,
             login: vi.fn(),
             logout: vi.fn(),
+            updateUser: vi.fn(),
           }}
         >
           <NotificationsPage />
@@ -129,5 +137,50 @@ describe('NotificationsPage Component', () => {
       fireEvent.click(markAllBtn);
     });
     expect(markAllSpy).toHaveBeenCalledWith('fake-jwt');
+
+    await waitFor(() => {
+      expect(screen.getByText(/Marked 2 notifications as read/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles error state and retry functionality', async () => {
+    const fetchSpy = vi
+      .spyOn(notificationService, 'fetchNotifications')
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        items: mockNotifications,
+        total: 2,
+        unread_count: 2,
+      });
+
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider
+          value={{
+            user: mockCitizenUser,
+            token: 'fake-jwt',
+            isAuthenticated: true,
+            isLoading: false,
+            login: vi.fn(),
+            logout: vi.fn(),
+            updateUser: vi.fn(),
+          }}
+        >
+          <NotificationsPage />
+        </AuthContext.Provider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Network error')).toBeInTheDocument();
+    });
+
+    const retryBtn = screen.getByRole('button', { name: /retry/i });
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Report Claimed')).toBeInTheDocument();
+    });
   });
 });

@@ -62,4 +62,52 @@ export const authService = {
     if (!response.ok) throw new Error('Session expired. Please log in again.');
     return response.json();
   },
+
+  async updateProfile(token: string, payload: { name: string }): Promise<User> {
+    const response = await fetch(`${API_BASE}/api/v1/auth/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const msg =
+        data?.error?.message ||
+        data?.detail?.[0]?.msg ||
+        'Profile update failed. Please try again.';
+      throw new Error(msg);
+    }
+    return data as User;
+  },
+
+  async changePassword(
+    token: string,
+    payload: {
+      current_password: string;
+      new_password: string;
+      new_password_confirm: string;
+    },
+  ): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/v1/auth/me/password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const msg =
+        data?.error?.message ||
+        data?.detail?.[0]?.msg ||
+        'Password change failed. Please try again.';
+      throw new Error(msg);
+    }
+  },
 };

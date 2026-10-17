@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: greenloop_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-greenloop}
+      POSTGRES_USER: ${POSTGRES_USER:-greenloop_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - greenloop_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: greenloop_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: "GreenLoop"
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: "False"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-greenloop_user}:${POSTGRES_PASSWORD:-greenloop_secure_password_replace_in_prod}@db:5432/${POSTGRES_DB:-greenloop}
+      SECRET_KEY: ${SECRET_KEY:-greenloop-production-secret-key-replace-with-secure-32-chars-token}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+      UPLOAD_DIR: "/app/uploads"
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      RATE_LIMIT_ENABLED: "True"
+      ENABLE_SECURITY_HEADERS: "True"
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    expose:
+      - "8000"
+    networks:
+      - greenloop_net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: greenloop_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${PORT:-80}:80"
+    networks:
+      - greenloop_net
+
+volumes:
+  postgres_data:
+    name: greenloop_postgres_data
+  uploads_data:
+    name: greenloop_uploads_data
+
+networks:
+  greenloop_net:
+    name: greenloop_network
+    driver: bridge

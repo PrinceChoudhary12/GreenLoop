@@ -60,6 +60,21 @@ class Settings(BaseSettings):
             return json.loads(v)
         return v
 
+    # Security & Hardening
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 30
+    RATE_LIMIT_API_PER_MINUTE: int = 150
+    ENABLE_SECURITY_HEADERS: bool = True
+    MAX_REQUEST_BODY_BYTES: int = 10 * 1024 * 1024  # 10 MB
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key_security(cls, v: str) -> str:
+        """Validate secret key strength."""
+        if not v or len(v.strip()) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters long.")
+        return v
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

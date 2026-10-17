@@ -25,7 +25,17 @@ echo "--> Running Frontend Tests (Vitest)..."
 cd "$ROOT_DIR/frontend"
 npm test -- --run
 
+# 3. Frontend Type Check & Production Build
+echo ""
+echo "--> Running Frontend Type Check & Production Build (Vite)..."
+npm run build
+
+# 4. Frontend Lint (Oxlint)
+echo ""
+echo "--> Running Frontend Lint (Oxlint)..."
+npx oxlint
+
 echo ""
 echo "==========================================="
-echo "  All Test Suites Passed Successfully!     "
+echo "  All Test Suites & Quality Gates Passed!  "
 echo "==========================================="

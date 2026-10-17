@@ -1,0 +1,273 @@
+/* ==========================================================================
+   GreenLoop Platform UI 2.0 — Help Page Styles
+   ========================================================================== */
+
+.help-page-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8, 32px);
+}
+
+.help-hero {
+  text-align: center;
+  padding: var(--space-8, 32px) var(--space-4, 16px);
+  background: linear-gradient(135deg, rgba(45, 106, 79, 0.08) 0%, rgba(64, 145, 108, 0.12) 100%);
+  border: 1px solid var(--color-border-nature, #d1e7dd);
+  border-radius: var(--radius-lg, 16px);
+}
+
+.help-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-brand-primary, #2d6a4f);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-3, 12px) auto;
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25);
+}
+
+.help-hero-title {
+  font-size: var(--font-size-2xl, 1.5rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brand-dark, #1b4332);
+  margin: 0 0 6px 0;
+}
+
+.help-hero-subtitle {
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-secondary, #475569);
+  max-width: 560px;
+  margin: 0 auto var(--space-6, 24px) auto;
+}
+
+.help-search-bar {
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.help-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-muted, #64748b);
+}
+
+.help-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  background: var(--color-surface-card, #ffffff);
+  font-size: var(--font-size-sm, 0.875rem);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+.help-search-input:focus {
+  border-color: var(--color-brand-primary, #2d6a4f);
+}
+
+.help-layout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--space-6, 24px);
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .help-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.section-icon {
+  color: var(--color-brand-primary, #2d6a4f);
+}
+
+.section-heading {
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brand-dark, #1b4332);
+  margin: 0;
+}
+
+.faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.faq-card {
+  background: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.faq-card.open {
+  border-color: var(--color-brand-light, #40916c);
+}
+
+.faq-question-btn {
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-primary, #1e293b);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.faq-category-tag {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-bold, 700);
+  background: var(--color-brand-soft, #d8f3dc);
+  color: var(--color-brand-dark, #1b4332);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  white-space: nowrap;
+}
+
+.faq-question-text {
+  flex: 1;
+}
+
+.faq-answer {
+  padding: 0 16px 16px 16px;
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-secondary, #475569);
+  line-height: 1.5;
+  border-top: 1px solid var(--color-border-subtle, #f1f5f9);
+}
+
+.faq-empty {
+  padding: var(--space-6, 24px);
+  text-align: center;
+  background: var(--color-surface-card, #ffffff);
+  border-radius: var(--radius-md, 10px);
+  color: var(--color-text-muted, #64748b);
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+/* Contact Card */
+.contact-card {
+  background: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-6, 24px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.contact-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-5, 20px);
+}
+
+.contact-icon {
+  color: var(--color-brand-primary, #2d6a4f);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contact-header h3 {
+  margin: 0 0 2px 0;
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-primary, #1e293b);
+}
+
+.contact-header p {
+  margin: 0;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-secondary, #475569);
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-secondary, #475569);
+}
+
+.form-input,
+.form-textarea {
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  background: var(--color-surface-bg, #f8faf9);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-primary, #1e293b);
+  outline: none;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--color-brand-primary, #2d6a4f);
+  background: #ffffff;
+}
+
+.ticket-success {
+  padding: var(--space-5, 20px);
+  background: var(--color-success-bg, #ecfdf5);
+  border: 1px solid var(--color-success-border, #a7f3d0);
+  border-radius: var(--radius-md, 10px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.ticket-success strong {
+  color: var(--color-success-text, #065f46);
+}
+
+.ticket-success p {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-success-text, #065f46);
+  margin: 0 0 var(--space-2, 8px) 0;
+}
+
+.contact-footer {
+  margin-top: var(--space-5, 20px);
+  padding-top: var(--space-4, 16px);
+  border-top: 1px solid var(--color-border-subtle, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-muted, #64748b);
+}

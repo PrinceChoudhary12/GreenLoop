@@ -53,7 +53,23 @@ class StorageService:
                 error_code="EMPTY_FILE",
             )
 
-        # 3. Determine safe file extension
+        # 3. Magic byte signature verification
+        is_valid_sig = False
+        if contents.startswith(b"\x89PNG\r\n\x1a\n"):
+            is_valid_sig = True
+        elif contents.startswith(b"\xff\xd8\xff"):
+            is_valid_sig = True
+        elif contents.startswith(b"RIFF") and len(contents) >= 12 and contents[8:12] == b"WEBP":
+            is_valid_sig = True
+
+        if not is_valid_sig:
+            raise AppException(
+                message="Uploaded file content does not match a valid image signature (JPEG, PNG, or WebP).",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="INVALID_FILE_SIGNATURE",
+            )
+
+        # 4. Determine safe file extension
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
             # fallback from content type

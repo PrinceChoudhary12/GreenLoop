@@ -1,0 +1,147 @@
+/* ==========================================================================
+   GreenLoop Platform UI 2.0 — Activity Page Styles
+   ========================================================================== */
+
+.activity-page-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+}
+
+.activity-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 16px);
+  flex-wrap: wrap;
+}
+
+.activity-header-left {
+  flex: 1;
+  min-width: 280px;
+}
+
+.activity-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+}
+
+.activity-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md, 10px);
+  background: linear-gradient(135deg, var(--color-brand-primary, #2d6a4f) 0%, var(--color-brand-light, #40916c) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+  flex-shrink: 0;
+}
+
+.activity-page-title {
+  font-size: var(--font-size-2xl, 1.5rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brand-dark, #1b4332);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+}
+
+.activity-page-subtitle {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-secondary, #475569);
+  margin: 0;
+}
+
+.activity-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+}
+
+.activity-filter-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 0 var(--space-2, 8px) 0 var(--space-3, 12px);
+}
+
+.filter-icon {
+  color: var(--color-text-muted, #64748b);
+  margin-right: 6px;
+}
+
+.activity-filter-select {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-primary, #1e293b);
+  padding: 8px 16px 8px 0;
+  cursor: pointer;
+  outline: none;
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.activity-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.activity-error-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px);
+  background: var(--color-error-bg, #fef2f2);
+  border: 1px solid var(--color-error-border, #fecaca);
+  border-radius: var(--radius-md, 10px);
+  color: var(--color-error-text, #991b1b);
+}
+
+.activity-timeline-card {
+  background: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.timeline-card-header {
+  padding: var(--space-3, 12px) var(--space-5, 20px);
+  background: var(--color-surface-bg, #f8faf9);
+  border-bottom: 1px solid var(--color-border-subtle, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timeline-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.timeline-card-body {
+  padding: var(--space-5, 20px);
+}

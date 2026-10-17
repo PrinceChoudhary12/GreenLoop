@@ -51,8 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
   }, []);
 
+  /** Patch only the user field so all profile-displaying components re-render immediately. */
+  const updateUser = useCallback((updatedUser: User) => {
+    setState(prev => ({ ...prev, user: updatedUser }));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

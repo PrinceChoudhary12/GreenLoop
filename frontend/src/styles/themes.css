@@ -1,0 +1,305 @@
+/* ==========================================================================
+   GreenLoop Platform UI 2.0 — Multi-Theme Visual System
+   ========================================================================== */
+
+/* 1. GreenLoop Light (Default) */
+[data-theme="light"],
+:root {
+  --color-brand-dark: #1b4332;
+  --color-brand-primary: #2d6a4f;
+  --color-brand-light: #40916c;
+  --color-brand-soft: #d8f3dc;
+  --color-brand-tint: #f0fdf4;
+
+  --color-surface-bg: #f8faf9;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-hover: #f1f5f3;
+
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-border-subtle: #e2e8f0;
+  --color-border-nature: #d1e7dd;
+  --color-border-focus: #2d6a4f;
+
+  --color-success-bg: #ecfdf5;
+  --color-success-text: #065f46;
+  --color-success-border: #a7f3d0;
+  --color-success-dot: #10b981;
+
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #92400e;
+  --color-warning-border: #fde68a;
+  --color-warning-dot: #f59e0b;
+
+  --color-error-bg: #fef2f2;
+  --color-error-text: #991b1b;
+  --color-error-border: #fecaca;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-footer-bg: rgba(248, 250, 249, 0.7);
+  --topbar-bg: rgba(255, 255, 255, 0.95);
+  --chart-grid: #e2e8f0;
+}
+
+/* 2. GreenLoop Dark */
+[data-theme="dark"] {
+  --color-brand-dark: #d8f3dc;
+  --color-brand-primary: #40916c;
+  --color-brand-light: #52b788;
+  --color-brand-soft: #1a3329;
+  --color-brand-tint: #13261e;
+
+  --color-surface-bg: #0c1813;
+  --color-surface-card: #13261e;
+  --color-surface-elevated: #1a3329;
+  --color-surface-hover: #1e3b2f;
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #0c1813;
+
+  --color-border-subtle: #204234;
+  --color-border-nature: #295442;
+  --color-border-focus: #52b788;
+
+  --color-success-bg: #064e3b;
+  --color-success-text: #34d399;
+  --color-success-border: #059669;
+  --color-success-dot: #10b981;
+
+  --color-warning-bg: #78350f;
+  --color-warning-text: #fde68a;
+  --color-warning-border: #b45309;
+  --color-warning-dot: #f59e0b;
+
+  --color-error-bg: #7f1d1d;
+  --color-error-text: #fca5a5;
+  --color-error-border: #b91c1c;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #10211a;
+  --sidebar-footer-bg: rgba(12, 24, 19, 0.8);
+  --topbar-bg: rgba(19, 38, 30, 0.95);
+  --chart-grid: #204234;
+}
+
+/* 3. Forest (Deep Canopy & Moss) */
+[data-theme="forest"] {
+  --color-brand-dark: #ecfdf5;
+  --color-brand-primary: #10b981;
+  --color-brand-light: #34d399;
+  --color-brand-soft: #143828;
+  --color-brand-tint: #0e291d;
+
+  --color-surface-bg: #081a12;
+  --color-surface-card: #0e291d;
+  --color-surface-elevated: #143828;
+  --color-surface-hover: #1b4532;
+
+  --color-text-primary: #ecfdf5;
+  --color-text-secondary: #a7f3d0;
+  --color-text-muted: #6ee7b7;
+  --color-text-inverse: #081a12;
+
+  --color-border-subtle: #1e4b36;
+  --color-border-nature: #276247;
+  --color-border-focus: #10b981;
+
+  --color-success-bg: #064e3b;
+  --color-success-text: #6ee7b7;
+  --color-success-border: #059669;
+  --color-success-dot: #10b981;
+
+  --color-warning-bg: #713f12;
+  --color-warning-text: #fef08a;
+  --color-warning-border: #a16207;
+  --color-warning-dot: #eab308;
+
+  --color-error-bg: #7f1d1d;
+  --color-error-text: #fca5a5;
+  --color-error-border: #b91c1c;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #0a2117;
+  --sidebar-footer-bg: rgba(8, 26, 18, 0.8);
+  --topbar-bg: rgba(14, 41, 29, 0.95);
+  --chart-grid: #1e4b36;
+}
+
+/* 4. Ocean (Marine Blue & Cyan) */
+[data-theme="ocean"] {
+  --color-brand-dark: #f0f9ff;
+  --color-brand-primary: #0284c7;
+  --color-brand-light: #38bdf8;
+  --color-brand-soft: #152f4c;
+  --color-brand-tint: #0e2238;
+
+  --color-surface-bg: #081726;
+  --color-surface-card: #0e2238;
+  --color-surface-elevated: #152f4c;
+  --color-surface-hover: #1c3b5f;
+
+  --color-text-primary: #f0f9ff;
+  --color-text-secondary: #bae6fd;
+  --color-text-muted: #7dd3fc;
+  --color-text-inverse: #081726;
+
+  --color-border-subtle: #1e4063;
+  --color-border-nature: #2b5582;
+  --color-border-focus: #0284c7;
+
+  --color-success-bg: #083344;
+  --color-success-text: #67e8f9;
+  --color-success-border: #0e7490;
+  --color-success-dot: #06b6d4;
+
+  --color-warning-bg: #78350f;
+  --color-warning-text: #fde68a;
+  --color-warning-border: #b45309;
+  --color-warning-dot: #f59e0b;
+
+  --color-error-bg: #7f1d1d;
+  --color-error-text: #fca5a5;
+  --color-error-border: #b91c1c;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #0a1c2e;
+  --sidebar-footer-bg: rgba(8, 23, 38, 0.8);
+  --topbar-bg: rgba(14, 34, 56, 0.95);
+  --chart-grid: #1e4063;
+}
+
+/* 5. Midnight (Obsidian Slate & Neon Emerald) */
+[data-theme="midnight"] {
+  --color-brand-dark: #f8fafc;
+  --color-brand-primary: #10b981;
+  --color-brand-light: #34d399;
+  --color-brand-soft: #1e293b;
+  --color-brand-tint: #0f172a;
+
+  --color-surface-bg: #090d16;
+  --color-surface-card: #0f172a;
+  --color-surface-elevated: #1e293b;
+  --color-surface-hover: #24334a;
+
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #090d16;
+
+  --color-border-subtle: #1e293b;
+  --color-border-nature: #334155;
+  --color-border-focus: #10b981;
+
+  --color-success-bg: #064e3b;
+  --color-success-text: #34d399;
+  --color-success-border: #059669;
+  --color-success-dot: #10b981;
+
+  --color-warning-bg: #78350f;
+  --color-warning-text: #fde68a;
+  --color-warning-border: #b45309;
+  --color-warning-dot: #f59e0b;
+
+  --color-error-bg: #7f1d1d;
+  --color-error-text: #fca5a5;
+  --color-error-border: #b91c1c;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #0b1120;
+  --sidebar-footer-bg: rgba(9, 13, 22, 0.8);
+  --topbar-bg: rgba(15, 23, 42, 0.95);
+  --chart-grid: #1e293b;
+}
+
+/* 6. Warm Earth (Clay & Botanical Sage) */
+[data-theme="warm-earth"] {
+  --color-brand-dark: #44281d;
+  --color-brand-primary: #7c4d32;
+  --color-brand-light: #a05a35;
+  --color-brand-soft: #f5e8df;
+  --color-brand-tint: #faf3ed;
+
+  --color-surface-bg: #fcf9f5;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #f7f2eb;
+  --color-surface-hover: #f0e9df;
+
+  --color-text-primary: #292524;
+  --color-text-secondary: #57534e;
+  --color-text-muted: #78716c;
+  --color-text-inverse: #ffffff;
+
+  --color-border-subtle: #e7dfd5;
+  --color-border-nature: #d8cbbf;
+  --color-border-focus: #7c4d32;
+
+  --color-success-bg: #f0fdf4;
+  --color-success-text: #166534;
+  --color-success-border: #bbf7d0;
+  --color-success-dot: #22c55e;
+
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #92400e;
+  --color-warning-border: #fde68a;
+  --color-warning-dot: #f59e0b;
+
+  --color-error-bg: #fef2f2;
+  --color-error-text: #991b1b;
+  --color-error-border: #fecaca;
+  --color-error-dot: #ef4444;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-footer-bg: rgba(250, 243, 237, 0.7);
+  --topbar-bg: rgba(255, 255, 255, 0.95);
+  --chart-grid: #e7dfd5;
+}
+
+/* 7. High Contrast (WCAG AAA Accessible) */
+[data-theme="high-contrast"] {
+  --color-brand-dark: #ffffff;
+  --color-brand-primary: #00ff66;
+  --color-brand-light: #33ff88;
+  --color-brand-soft: #003314;
+  --color-brand-tint: #001a0a;
+
+  --color-surface-bg: #000000;
+  --color-surface-card: #0a0a0a;
+  --color-surface-elevated: #141414;
+  --color-surface-hover: #1f1f1f;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #f5f5f5;
+  --color-text-muted: #d4d4d4;
+  --color-text-inverse: #000000;
+
+  --color-border-subtle: #ffffff;
+  --color-border-nature: #00ff66;
+  --color-border-focus: #ffff00;
+
+  --color-success-bg: #000000;
+  --color-success-text: #00ff66;
+  --color-success-border: #00ff66;
+  --color-success-dot: #00ff66;
+
+  --color-warning-bg: #000000;
+  --color-warning-text: #ffff00;
+  --color-warning-border: #ffff00;
+  --color-warning-dot: #ffff00;
+
+  --color-error-bg: #000000;
+  --color-error-text: #ff3333;
+  --color-error-border: #ff3333;
+  --color-error-dot: #ff3333;
+
+  --sidebar-bg: #050505;
+  --sidebar-footer-bg: #000000;
+  --topbar-bg: #050505;
+  --chart-grid: #ffffff;
+}

@@ -1,7 +1,7 @@
 """Waste report database model."""
 
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.models.base import BaseEntity
@@ -29,6 +29,8 @@ class WasteReport(BaseEntity):
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
     location: Mapped[str] = mapped_column(String(255), nullable=False)
+    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     image_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     status: Mapped[ReportStatus] = mapped_column(
         Enum(ReportStatus, native_enum=False),

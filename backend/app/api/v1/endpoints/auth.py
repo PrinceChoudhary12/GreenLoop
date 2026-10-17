@@ -6,7 +6,15 @@ from sqlalchemy.orm import Session
 from backend.app.core.deps import get_current_user
 from backend.app.db.session import get_db
 from backend.app.models.user import User
-from backend.app.schemas.user import TokenResponse, UserLogin, UserRegister, UserResponse
+from backend.app.schemas.user import (
+    MessageResponse,
+    TokenResponse,
+    UserLogin,
+    UserPasswordChange,
+    UserProfileUpdate,
+    UserRegister,
+    UserResponse,
+)
 from backend.app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -52,7 +60,6 @@ def register_collector(
     )
 
 
-
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -85,3 +92,37 @@ def get_me(
 ) -> UserResponse:
     """Return currently authenticated user."""
     return UserResponse.model_validate(current_user)
+
+
+@router.put(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update Current User Profile",
+    description="Update mutable profile information (e.g. name) of the currently authenticated user.",
+)
+def update_me(
+    payload: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Update profile of currently authenticated user."""
+    user = AuthService.update_profile(db=db, user=current_user, data=payload)
+    return UserResponse.model_validate(user)
+
+
+@router.put(
+    "/me/password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change Current User Password",
+    description="Change password for the currently authenticated user after verifying current password.",
+)
+def change_my_password(
+    payload: UserPasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    """Change password for currently authenticated user."""
+    AuthService.change_password(db=db, user=current_user, data=payload)
+    return MessageResponse(message="Password changed successfully.")

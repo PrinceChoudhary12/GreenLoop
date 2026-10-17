@@ -1,99 +1,109 @@
+/* ==========================================================================
+   GreenLoop Platform UI 2.0 — Global Application Shell & Layout
+   ========================================================================== */
+
 .app-shell {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  background-color: var(--color-surface-bg, #f8faf9);
+  color: var(--color-text-primary, #1e293b);
+  position: relative;
 }
 
+/* Main Content Wrapper (Pushed right by sidebar on desktop) */
+.app-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  margin-left: var(--sidebar-width, 260px);
+  transition: margin-left var(--transition-normal, 250ms ease);
+}
+
+.app-shell.sidebar-collapsed .app-main-wrapper {
+  margin-left: var(--sidebar-collapsed-width, 72px);
+}
+
+/* Inner Page Content */
 .main-content {
   flex: 1;
   width: 100%;
-  max-width: 1120px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-6, 24px) var(--space-8, 32px);
+}
+
+@media (max-width: 1024px) {
+  .app-main-wrapper {
+    margin-left: 0 !important;
+  }
 }
 
 @media (max-width: 640px) {
   .main-content {
-    padding: var(--space-4) var(--space-4);
+    padding: var(--space-4, 16px) var(--space-4, 16px);
   }
 }
 
-.header {
-  background-color: var(--color-surface-card);
-  border-bottom: 1px solid var(--color-border-subtle);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.header-container {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo-link {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  text-decoration: none;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background-color: var(--color-brand-primary);
-  color: var(--color-text-inverse);
-  border-radius: var(--radius-md);
-  display: flex;
+/* Global Button and Pill utility styles */
+.btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2, 8px);
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 10px);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+  text-decoration: none;
+  border: 1px solid transparent;
 }
 
-.logo-text {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-brand-dark);
-  letter-spacing: -0.02em;
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-brand-dark, #1b4332) 0%, var(--color-brand-primary, #2d6a4f) 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(45, 106, 79, 0.15);
 }
 
-.logo-text span {
-  color: var(--color-brand-light);
+.btn-primary:hover {
+  background: linear-gradient(135deg, #163628 0%, var(--color-brand-dark, #1b4332) 100%);
+  box-shadow: 0 4px 8px rgba(45, 106, 79, 0.25);
+  transform: translateY(-1px);
 }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  list-style: none;
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary, #475569);
+  border-color: var(--color-border-subtle, #e2e8f0);
 }
 
-.nav-item {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
+.btn-ghost:hover {
+  background: var(--color-surface-hover, #f1f5f3);
+  color: var(--color-brand-dark, #1b4332);
 }
 
-.nav-item:hover {
-  color: var(--color-brand-dark);
+.btn-sm {
+  padding: 6px 12px;
+  font-size: var(--font-size-xs, 0.75rem);
 }
 
+/* Footer styling */
 .footer {
-  background-color: var(--color-surface-card);
-  border-top: 1px solid var(--color-border-subtle);
-  padding: var(--space-8) var(--space-6);
+  background-color: var(--color-surface-card, #ffffff);
+  border-top: 1px solid var(--color-border-subtle, #e2e8f0);
+  padding: var(--space-6, 24px) var(--space-8, 32px);
   margin-top: auto;
 }
 
 .footer-container {
-  max-width: 1120px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-4, 16px);
   align-items: center;
   text-align: center;
 }
@@ -107,6 +117,6 @@
 }
 
 .footer-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-muted, #64748b);
 }
